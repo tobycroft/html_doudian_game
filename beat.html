@@ -1,183 +1,79 @@
-<!DOCTYPE html>
-<html lang="zh">
-<head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
-    <title>随机数字展示器</title>
-    <style>
-        :root { font-size: 16px; }
-        body {
-            margin: 0;
-            padding: 0.8rem;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial;
-            background: #fafafa;
-            color: #111;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-height: 100vh;
-            box-sizing: border-box;
-        }
-        h1 { margin: 0.2rem 0 0.6rem; font-size: 1.4rem; font-weight: 700; }
-
-        .controls {
-            display: flex;
-            gap: 0.6rem;
-            align-items: center;
-            justify-content: center;
-            flex-wrap: wrap;
-            margin-bottom: 0.6rem;
-        }
-        .seg-control {
-            display: flex;
-            align-items: center;
-            gap: 0.6rem;
-            background: white;
-            padding: 0.45rem 0.6rem;
-            border-radius: 0.7rem;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.06);
-            border: 1px solid rgba(0,0,0,0.06);
-        }
-        .seg-control label { font-size: 1rem; user-select: none; }
-        .seg-control input[type="number"] {
-            width: 4.2rem;
-            padding: 0.35rem 0.5rem;
-            font-size: 1rem;
-            border-radius: 0.45rem;
-            border: 1px solid #ddd;
-            text-align: center;
-            -webkit-appearance: none;
-            appearance: none;
-            background: #fff;
-        }
-
-        .btn {
-            background: #2563eb;
-            color: #fff;
-            border: none;
-            border-radius: 0.6rem;
-            padding: 0.5rem 0.9rem;
-            font-size: 1rem;
-            cursor: pointer;
-            box-shadow: 0 2px 6px rgba(37,99,235,0.18);
-            width: 80%;
-        }
-        .btn.secondary {
-            background: #ef4444;
-            box-shadow: 0 2px 6px rgba(239,68,68,0.18);
-        }
-
-        #counter { margin-top: 0.5rem; font-size: 1rem; color: #333; }
-
-        /* 大提示框 */
-        .modal {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.6);
-            justify-content: center;
-            align-items: center;
-            z-index: 60;
-        }
-        .modal .box {
-            background: #fff;
-            padding: 1.6rem 1.4rem;
-            border-radius: 1rem;
-            text-align: center;
-            width: min(90vw, 30rem);
-            box-shadow: 0 12px 40px rgba(0,0,0,0.25);
-        }
-        .modal .label { font-size: 1.25rem; margin-bottom: 0.5rem; color: #444; }
-        .modal .bignum { font-size: 4.5rem; font-weight: 900; margin-bottom: 0.6rem; color: #111; letter-spacing: 0.02em; }
-        .modal .confirm {
-            border: none;
-            background: #2563eb;
-            color: white;
-            font-size: 1.15rem;
-            padding: 0.55rem 1.1rem;
-            border-radius: 0.6rem;
-            cursor: pointer;
-        }
-
-        @media (max-width: 420px) {
-            :root { font-size: 15px; }
-            .modal .bignum { font-size: 3.6rem; }
-        }
-    </style>
-</head>
-<body>
-
-<h1>随机数字展示器</h1>
-
-<div class="controls">
-    <div class="seg-control">
-        <label for="maxNumInput">最大数字</label>
-        <input id="maxNumInput" type="number" min="1" max="999" value="10" inputmode="numeric" pattern="[0-9]*" />
-    </div>
-
-    <button id="generateBtn" class="btn" type="button">生成随机数</button>
+<div id="progress-container" style="width: 80%; max-width: 24rem; margin: 2rem 0; background: #eee; border-radius: 1rem; overflow: hidden; height: 2rem;">
+    <div id="progress-bar" style="width: 0%; height: 100%; background: #2563eb; transition: width 0s;"></div>
 </div>
-
-<button id="resetBtn" class="btn secondary" type="button">重新开始</button>
-<div id="counter">点击次数: 0</div>
-
-<!-- 结果模态 -->
-<div id="resultModal" class="modal" role="dialog" aria-modal="true">
-    <div class="box">
-        <div class="label">生成结果：</div>
-        <div id="bigNum" class="bignum">1</div>
-        <button class="confirm" id="okBtn">确认</button>
-    </div>
-</div>
-
 <script>
     (function(){
-        const generateBtn = document.getElementById('generateBtn');
-        const resetBtn = document.getElementById('resetBtn');
-        const maxInput = document.getElementById('maxNumInput');
+        const progressBar = document.getElementById('progress-bar');
+        const spinBtn = document.getElementById('spinBtn');
         const counterEl = document.getElementById('counter');
         const resultModal = document.getElementById('resultModal');
         const bigNumEl = document.getElementById('bigNum');
         const okBtn = document.getElementById('okBtn');
+        const numInput = document.getElementById('numSegmentsInput');
 
-        let clickCount = 0;
+        let numSegments = Math.max(2, parseInt(numInput.value)||6);
+        let spinCount = 0;
+        let spinning = false;
         let lastResult = null;
+        let progressStartTime = null;
+        let progressDuration = 3000; // 基础读条时长
+        let animationFrameId = null;
 
-        function showResult(num) {
+        function updateProgress(timestamp){
+            if(!progressStartTime) progressStartTime = timestamp;
+            const elapsed = timestamp - progressStartTime;
+            let percent = Math.min(100, (elapsed / progressDuration) * 100);
+            progressBar.style.width = percent + '%';
+            if(percent < 100){
+                animationFrameId = requestAnimationFrame(updateProgress);
+            }else{
+                spinning = false;
+                // 随机结果
+                numSegments = Math.max(2, Math.min(60, parseInt(numInput.value)||6));
+                const result = Math.floor(Math.random() * numSegments) + 1;
+                lastResult = result;
+                setTimeout(()=>showResult(result), 300); // 0.3秒后弹窗
+            }
+        }
+
+        function spin(){
+            spinCount++;
+            counterEl.textContent = `点击次数: ${spinCount}`;
+
+            if(!spinning){
+                spinning = true;
+                progressBar.style.transition = 'none';
+                progressBar.style.width = '0%';
+                progressStartTime = null;
+                animationFrameId = requestAnimationFrame(updateProgress);
+            }else{
+                // 加速：剩余时间缩短一半
+                const computedStyle = window.getComputedStyle(progressBar);
+                const currentWidth = parseFloat(computedStyle.width) / parseFloat(progressBar.parentElement.offsetWidth) * 100;
+                cancelAnimationFrame(animationFrameId);
+                progressDuration = Math.max(300, progressDuration * (1 - currentWidth/100)/2); // 剩余时间缩短
+                progressStartTime = null;
+                animationFrameId = requestAnimationFrame(updateProgress);
+            }
+        }
+
+        function showResult(num){
             bigNumEl.textContent = num;
             resultModal.style.display = 'flex';
         }
-
-        function closeResult() {
+        function closeResult(){
             resultModal.style.display = 'none';
         }
 
-        generateBtn.addEventListener('click', () => {
-            const max = Math.max(1, parseInt(maxInput.value) || 10);
-            const num = Math.floor(Math.random() * max) + 1;
-            lastResult = num;
-
-            clickCount++;
-            counterEl.textContent = `点击次数: ${clickCount}`;
-
-            showResult(num);
-        });
-
-        resetBtn.addEventListener('click', () => {
-            clickCount = 0;
-            counterEl.textContent = '点击次数: 0';
-        });
-
+        spinBtn.addEventListener('click', spin);
         okBtn.addEventListener('click', closeResult);
 
-        // 点击数字再次显示最后结果
-        bigNumEl.addEventListener('click', () => {
-            if (lastResult != null) {
+        // 点击显示上次结果
+        document.getElementById('progress-container').addEventListener('click', ()=>{
+            if(!spinning && lastResult != null){
                 showResult(lastResult);
             }
         });
     })();
-</script>
 
-</body>
-</html>
+</script>
