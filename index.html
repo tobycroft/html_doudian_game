@@ -1,449 +1,115 @@
 <!DOCTYPE html>
 <html lang="zh">
 <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
-    <title>比特转转</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>欢迎页</title>
     <style>
-        :root {
-            font-size: 16px; /* 可根据需要调整基准 rem */
-        }
-        body {
+        body, html {
             margin: 0;
-            padding: 0.8rem;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial;
-            background: #fafafa;
-            color: #111;
+        }
+        .bg {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: url("./img.png") no-repeat center center;
+            background-size: cover;
+            filter: brightness(0.85);
+            z-index: -1;
+        }
+        .container {
             display: flex;
             flex-direction: column;
             align-items: center;
-            min-height: 100vh;
+            justify-content: center;
+            height: 100%;
+            padding: 1rem;
             box-sizing: border-box;
-        }
-
-        h1 {
-            margin: 0.2rem 0 0.6rem;
-            font-size: 1.4rem;
-            font-weight: 700;
-        }
-
-        /* 控件区域，美化后的格子数量输入 */
-        .controls {
-            display: flex;
-            gap: 0.6rem;
-            align-items: center;
-            justify-content: center;
-            flex-wrap: wrap;
-            margin-bottom: 0.6rem;
-        }
-        .seg-control {
-            display: flex;
-            align-items: center;
-            gap: 0.6rem;
-            background: white;
-            padding: 0.45rem 0.6rem;
-            border-radius: 0.7rem;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.06);
-            border: 1px solid rgba(0,0,0,0.06);
-        }
-        .seg-control label {
-            font-size: 1rem;
-            user-select: none;
-        }
-        .seg-control input[type="number"] {
-            width: 4.2rem;
-            padding: 0.35rem 0.5rem;
-            font-size: 1rem;
-            border-radius: 0.45rem;
-            border: 1px solid #ddd;
-            text-align: center;
-            -webkit-appearance: none;
-            appearance: none;
-            background: #fff;
-        }
-        .seg-control input[type="number"]::-webkit-outer-spin-button,
-        .seg-control input[type="number"]::-webkit-inner-spin-button {
-            -webkit-appearance: none;
-            margin: 0;
-        }
-
-        .btn {
-            background: #2563eb;
             color: #fff;
+            text-shadow: 0 2px 6px rgba(0,0,0,0.5);
+        }
+        h1 {
+            font-size: 2.4rem;
+            margin-bottom: 1.4rem;
+        }
+        .btn {
+            font-size: 1.2rem;
+            padding: 0.8rem 1.8rem;
+            margin: 0.6rem;
             border: none;
-            border-radius: 0.6rem;
-            padding: 0.5rem 0.9rem;
-            font-size: 1rem;
+            border-radius: 0.8rem;
             cursor: pointer;
-            box-shadow: 0 2px 6px rgba(37,99,235,0.18);
-            width: 80%;
-        }
-        .btn.secondary {
-            background: #ef4444;
-            box-shadow: 0 2px 6px rgba(239,68,68,0.18);
-        }
-
-        /* 轮盘容器、指针（arrow） */
-        #wheel-area {
-            display: inline-block;
-            position: relative;
-            margin: 0.6rem 0;
-            touch-action: manipulation;
-            margin-top: 3rem;
-        }
-
-        /* 指针（固定在顶部中央） */
-        /* 箭头指针（改成朝下指向转盘） */
-        #pointer {
-            position: absolute;
-            top: -2rem;  /* 适当往上移 */
-            left: 50%;
-            transform: translateX(-50%);
-            width: 0; height: 0;
-            border-left: 1rem solid transparent;
-            border-right: 1rem solid transparent;
-            border-top: 2rem solid black;  /* ← 改成 border-top */
-            z-index: 2;
-        }
-
-
-        /* canvas 样式（宽度用 rem/viewport） */
-        #wheel {
-            display: block;
-            border-radius: 50%;
-            background: white;
-            box-shadow: 0 6px 18px rgba(0,0,0,0.08);
-            touch-action: manipulation;
-        }
-
-        #counter {
-            margin-top: 0.5rem;
-            font-size: 1rem;
+            background: rgba(255,255,255,0.9);
             color: #333;
+            transition: background 0.3s, transform 0.2s;
         }
-
-        /* 大提示框（适合摄像头展示） */
-        .modal {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.6);
-            justify-content: center;
+        .btn:hover {
+            background: rgba(255,255,255,1);
+            transform: scale(1.05);
+        }
+        .address-input {
+            margin-top: 1.8rem;
+            display: flex;
+            flex-direction: column;
             align-items: center;
-            z-index: 60;
         }
-        .modal .box {
-            background: #fff;
-            padding: 1.6rem 1.4rem;
-            border-radius: 1rem;
-            text-align: center;
-            width: min(90vw, 30rem);
-            box-shadow: 0 12px 40px rgba(0,0,0,0.25);
-        }
-        .modal .label {
-            font-size: 1.25rem;
-            margin-bottom: 0.5rem;
-            color: #444;
-        }
-        .modal .bignum {
-            font-size: 4.5rem;
-            font-weight: 900;
-            margin-bottom: 0.6rem;
-            color: #111;
-            letter-spacing: 0.02em;
-        }
-        .modal .confirm {
-            border: none;
-            background: #2563eb;
-            color: white;
-            font-size: 1.15rem;
-            padding: 0.55rem 1.1rem;
+        .address-input input {
+            font-size: 1.1rem;
+            padding: 0.6rem 1rem;
             border-radius: 0.6rem;
-            cursor: pointer;
-        }
-
-        /* 让整体在窄手机上更紧凑 */
-        @media (max-width: 420px) {
-            :root { font-size: 15px; }
-            .modal .bignum { font-size: 3.6rem; }
+            border: 1px solid #ddd;
+            width: 80%;
+            max-width: 20rem;
+            margin-top: 0.4rem;
         }
     </style>
 </head>
 <body>
+<div class="bg"></div>
 
-<h1>比特转转</h1>
+<div class="container">
+    <h1>欢迎来到转盘游戏 🎉</h1>
+    <button class="btn" id="goWheel">进入游戏页面</button>
+    <button class="btn" id="goAddr">填写地址</button>
 
-<div class="controls">
-    <div class="seg-control" role="group" aria-label="格子数量设置">
-        <label for="numSegmentsInput">格子数量</label>
-        <input id="numSegmentsInput" type="number" min="2" max="60" value="6"
-               inputmode="numeric" pattern="[0-9]*" />
-    </div>
-
-    <button id="generateBtn" class="btn" type="button" style="width: auto">生成</button>
-    <button id="spinBtn" class="btn" type="button">转动</button>
-
-</div>
-
-<div id="wheel-area">
-    <div id="pointer" aria-hidden="true"></div>
-    <canvas id="wheel" role="img" aria-label="转盘"></canvas>
-</div>
-<button id="resetBtn" class="btn secondary" type="button">重新开始</button>
-<div id="counter">点击次数: 0</div>
-
-<!-- 结果模态 -->
-<div id="resultModal" class="modal" role="dialog" aria-modal="true">
-    <div class="box">
-        <div class="label">您抽中了：</div>
-        <div id="bigNum" class="bignum">1</div>
-        <button class="confirm" id="okBtn">确认</button>
+    <div class="address-input" id="addrSection" style="display: none;">
+        <label for="addrInput" style="font-size: 1.1rem; color: #fff;">请输入地址：</label>
+        <input type="text" id="addrInput" placeholder="在这里输入地址…" />
+        <button class="btn" id="submitAddr" style="margin-top: 1rem;">提交地址</button>
     </div>
 </div>
 
 <script>
-    (function(){
-        const canvas = document.getElementById('wheel');
-        const ctx = canvas.getContext('2d');
-        const pointer = document.getElementById('pointer');
-        const generateBtn = document.getElementById('generateBtn');
-        const spinBtn = document.getElementById('spinBtn');
-        const resetBtn = document.getElementById('resetBtn');
-        const numInput = document.getElementById('numSegmentsInput');
-        const counterEl = document.getElementById('counter');
-        const resultModal = document.getElementById('resultModal');
-        const bigNumEl = document.getElementById('bigNum');
-        const okBtn = document.getElementById('okBtn');
+    const goWheel = document.getElementById('goWheel');
+    const goAddr = document.getElementById('goAddr');
+    const addrSection = document.getElementById('addrSection');
+    const submitAddr = document.getElementById('submitAddr');
+    const addrInput = document.getElementById('addrInput');
 
-        // 状态
-        let numSegments = Math.max(2, parseInt(numInput.value) || 6);
-        let spinCount = 0;
-        let spinning = false;
-        let currentAngle = 0;        // 当前角度（rad）对应 canvas 已旋转的总角度
-        let targetAngle = 0;         // 目标角度（rad）
-        let spinSeq = 0;             // 序号，用来保证只在最后一次 transitionend 生效
-        let lastResult = null;
+    goWheel.addEventListener('click', () => {
+        // 这里写跳转到转盘页面的逻辑
+        // 比如：window.location.href = 'wheel.html';
+        alert("跳转到转盘页面（你在这儿填入你项目的 URL）");
+    });
 
-        // 友好安全色调（避免刺眼纯色）
-        const safeColors = [
-            "#FFB347","#77DD77","#AEC6CF","#FFD700","#FF6961",
-            "#B39EB5","#03C03C","#779ECB","#F49AC2","#CFCFC4",
-            "#E6B8AF","#C7E0A4","#FFD1A9","#B4D8E7"
-        ];
+    goAddr.addEventListener('click', () => {
+        addrSection.style.display = addrSection.style.display === 'none' ? 'flex' : 'none';
+    });
 
-        const TAU = Math.PI * 2;
-
-        // 使 canvas 尺寸自适应并考虑 devicePixelRatio 保持清晰
-        function resizeCanvas() {
-            // 尺寸取屏幕宽度的 84%，但不超过 480px（在更大屏幕上也不宜过大）
-            const maxPx = Math.min(window.innerWidth * 0.84, 480);
-            const size = Math.floor(maxPx);
-            const dpr = window.devicePixelRatio || 1;
-
-            canvas.style.width = size + 'px';
-            canvas.style.height = size + 'px';
-            canvas.width = size * dpr;
-            canvas.height = size * dpr;
-
-            // 将绘图坐标缩放到 CSS 像素单位上（这样后面以 size/2 为基准）
-            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    submitAddr.addEventListener('click', () => {
+        const addr = addrInput.value.trim();
+        if (!addr) {
+            alert("请先输入地址");
+            return;
         }
-
-        // 随机选安全色，避免与上一个颜色相同（尽量防止相邻重复）
-        function pickSafeColor(prev) {
-            if (!prev) return safeColors[Math.floor(Math.random() * safeColors.length)];
-            let c;
-            let attempts = 0;
-            do {
-                c = safeColors[Math.floor(Math.random() * safeColors.length)];
-                attempts++;
-            } while (c === prev && attempts < 20);
-            return c;
-        }
-
-        // 绘制转盘（在 canvas上）
-        function drawWheel() {
-            resizeCanvas();
-            numSegments = Math.max(2, Math.min(60, parseInt(numInput.value) || 6));
-            const size = parseFloat(getComputedStyle(canvas).width); // CSS px
-            const r = size / 2;
-            ctx.clearRect(0, 0, size, size);
-
-            const angle = TAU / numSegments;
-            let prevColor = null;
-
-            for (let i = 0; i < numSegments; i++) {
-                const start = i * angle;
-                const end = (i + 1) * angle;
-
-                // 扇区
-                ctx.beginPath();
-                ctx.moveTo(r, r);
-                ctx.arc(r, r, r - 1, start, end); // 留 1px 内边线
-                ctx.closePath();
-
-                const color = pickSafeColor(prevColor);
-                prevColor = color;
-                ctx.fillStyle = color;
-                ctx.fill();
-
-                // 分割线（淡色）
-                ctx.beginPath();
-                ctx.moveTo(r, r);
-                ctx.arc(r, r, r - 0.5, start, start + 0.003); // tiny stroke to keep seam sharp
-                ctx.lineTo(r, r);
-                ctx.closePath();
-                ctx.strokeStyle = 'rgba(255,255,255,0.16)';
-                ctx.lineWidth = 1;
-                ctx.stroke();
-
-                // 文字（横向朝向中心）
-                // 动态计算字体大小：尽量在扇区内可读，但不至于太小
-                // 公式：基础 18px，随着分段增多逐步减小
-                const base = 18;
-                const fontSize = Math.max(10, Math.floor(base - numSegments / 3));
-                ctx.save();
-                ctx.translate(r, r);
-                // 将坐标旋转到扇区中线角度
-                ctx.rotate(start + angle / 2);
-                ctx.textAlign = 'right';
-                ctx.textBaseline = 'middle';
-                ctx.fillStyle = '#111';
-                ctx.font = `bold ${fontSize}px Arial, sans-serif`;
-
-                // 将文字朝向中心横放（在 radius - 12 的位置）
-                const text = String(i + 1);
-                ctx.fillText(text, r - 12, 0);
-                ctx.restore();
-            }
-        }
-
-        // 计算针指向的扇区（修正后的精确计算）
-        // pointer is at global angle = -pi/2 (top). We want the original local angle of the canvas content at that global angle:
-        // localAngle = normalize( (-pi/2) - currentAngle )
-        function computeResultFromAngle(angleRad) {
-            const normCurrent = ((angleRad % TAU) + TAU) % TAU; // 0..2pi
-            const pointerGlobal = -Math.PI / 2;
-            let local = pointerGlobal - normCurrent;
-            local = ((local % TAU) + TAU) % TAU; // normalize to 0..2pi
-            const sector = Math.floor(local / (TAU / numSegments));
-            return (sector % numSegments) + 1; // 1-based
-        }
-
-        // 显示结果模态（数字加粗放大）
-        function showResult(num) {
-            bigNumEl.textContent = num;
-            resultModal.style.display = 'flex';
-        }
-
-        function closeResult() {
-            resultModal.style.display = 'none';
-        }
-
-        // 核心：旋转逻辑（支持加速）
-        function spin() {
-            // 每次点击都计为一次点击（包括加速点击）
-            spinCount++;
-            counterEl.textContent = `点击次数: ${spinCount}`;
-
-            // 每次点击引入额外的随机角度（让每次点击感觉有"推力"）
-            // 当未在旋转：大范围（5~7圈 + 随机角度）
-            // 当正在旋转：给一次或两次额外的完整圈数，使其加速明显
-            const extraRandom = (Math.random() * TAU); // 0..2pi
-            if (!spinning) {
-                spinning = true;
-                spinSeq += 1;
-                const mySeq = spinSeq;
-                const baseCircles = 5 + Math.floor(Math.random() * 3); // 5~7 圈
-                targetAngle = currentAngle + baseCircles * TAU + extraRandom;
-
-                // 设置较长的动画（缓慢开始再减速）
-                canvas.style.transition = 'transform 3.8s cubic-bezier(0.25, 0.1, 0.25, 1)';
-                canvas.style.transform = `rotate(${targetAngle}rad)`;
-
-                // 只在最后一次序列触发完成逻辑
-                canvas.addEventListener('transitionend', function handler(e) {
-                    if (e.propertyName !== 'transform') return;
-                    if (mySeq !== spinSeq) return; // 已被后续加速覆盖，忽略
-                    // finalization
-                    spinning = false;
-                    currentAngle = targetAngle % TAU;
-                    // 等待短时间再弹窗（<=1s），这里用 700ms
-                    const result = computeResultFromAngle(currentAngle);
-                    lastResult = result;
-                    setTimeout(() => showResult(result), 700);
-                }, { once: true });
-
-            } else {
-                // 在转动中：做为“加速”处理 -> 叠加额外圈数并缩短后续动画时间以表现“加速”
-                spinSeq += 1;
-                const mySeq = spinSeq;
-
-                // 叠加 1~2 圈随机
-                const extraCircles = 1 + Math.floor(Math.random() * 2);
-                targetAngle += extraCircles * TAU + extraRandom;
-
-                // 使用较短时长，瞬间表现加速（浏览器会从当前 transform 状态平滑过渡）
-                canvas.style.transition = 'transform 1.1s cubic-bezier(0.25, 0.1, 0.25, 1)';
-                canvas.style.transform = `rotate(${targetAngle}rad)`;
-
-                // 仍然监听 transitionend，只有最新的 mySeq 会生效
-                canvas.addEventListener('transitionend', function handler(e) {
-                    if (e.propertyName !== 'transform') return;
-                    if (mySeq !== spinSeq) return;
-                    spinning = false;
-                    currentAngle = targetAngle % TAU;
-                    const result = computeResultFromAngle(currentAngle);
-                    lastResult = result;
-                    setTimeout(() => showResult(result), 700);
-                }, { once: true });
-            }
-        }
-
-        // 点击 canvas 显示上次结果（前提：非旋转中）
-        canvas.addEventListener('click', () => {
-            if (!spinning && lastResult != null) {
-                showResult(lastResult);
-            }
-        });
-
-        // 事件绑定
-        generateBtn.addEventListener('click', () => {
-            // 生成时如果正在旋转则简单忽略（避免改变当前动画）
-            if (spinning) return;
-            drawWheel();
-        });
-
-        spinBtn.addEventListener('click', () => {
-            spin();
-        });
-
-        resetBtn.addEventListener('click', () => {
-            // 仅清零计数器（按你的需求）
-            spinCount = 0;
-            counterEl.textContent = '点击次数: 0';
-        });
-
-        okBtn.addEventListener('click', () => {
-            closeResult();
-        });
-
-        // 窗口缩放自适应
-        window.addEventListener('resize', () => {
-            // 当屏幕大小变化，重设 canvas 并重绘；如果在旋转中，保留 currentAngle
-            drawWheel();
-            // 重新应用当前 transform（保持视觉角度一致）
-            canvas.style.transform = `rotate(${currentAngle}rad)`;
-        });
-
-        // 初始绘制
-        drawWheel();
-
-        // === 供调试或未来调整的小提示 ===
-        // 如果你想调整从停止到弹窗的延迟，修改上面 setTimeout(..., 700) 的 700 毫秒值即可。
-        // 如果你觉得加速力度太强/太弱，可以修改加速时 extraCircles（1~2 圈），或加速过渡时间 '1.1s'。
-    })();
+        // 这里你可以保存地址、跳转、调用接口等
+        alert("你输入的地址是：" + addr);
+    });
 </script>
-
 </body>
 </html>
