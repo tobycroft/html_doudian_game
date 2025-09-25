@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>转盘转转</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+        }
+        h1 {
+            font-size: 2rem;
+            margin: 1rem 0;
+        }
+        #controls {
+            margin: 1rem 0;
+        }
+        .input-group {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1.2rem;
+        }
+        .input-group input {
+            font-size: 1.2rem;
+            padding: 0.3rem 0.5rem;
+            border: 1px solid #ccc;
+            border-radius: 0.5rem;
+            width: 4rem;
+            text-align: center;
+        }
+        .btn-spin {
+            display: block;
+            width: calc(100% - 2rem);
+            margin: 1rem auto;
+            padding: 1rem;
+            font-size: 1.2rem;
+            border: none;
+            border-radius: 0.8rem;
+            background: #007bff;
+            color: white;
+            cursor: pointer;
+        }
+        #wheel-container {
+            position: relative;
+            display: inline-block;
+        }
+        #wheel {
+            border-radius: 50%;
+            transition: transform 4s cubic-bezier(0.25, 0.1, 0.25, 1);
+        }
+        /* 箭头指针（改为朝下） */
+        #pointer {
+            position: absolute;
+            bottom: -2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0; height: 0;
+            border-left: 1rem solid transparent;
+            border-right: 1rem solid transparent;
+            border-top: 2rem solid black;
+            z-index: 2;
+        }
+        #counter {
+            font-size: 1.8rem; /* 放大 1.5 倍 */
+            font-weight: bold; /* 加粗 */
+            margin: 1rem 0;
+        }
+        #reset {
+            background-color: red;
+            color: white;
+            font-size: 1.2rem;
+            padding: 0.7rem 1.5rem;
+            border: none;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            margin-bottom: 1rem;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6);
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background: white;
+            padding: 2rem;
+            border-radius: 1rem;
+            text-align: center;
+            font-size: 2rem;
+            font-weight: bold;
+            max-width: 80%;
+        }
+        .modal-content button {
+            margin-top: 1rem;
+            font-size: 1.5rem;
+            padding: 0.5rem 1.5rem;
+        }
+    </style>
+</head>
+<body>
+<h1>转盘转转</h1>
+<div id="controls">
+    <div class="input-group">
+        <label for="segments">格子数量:</label>
+        <input id="segments" type="number" value="6" min="2" max="30">
+        <button onclick="generateWheel()">生成</button>
+    </div>
+    <button class="btn-spin" onclick="spin()">转动</button>
+</div>
+
+<div id="wheel-container">
+    <canvas id="wheel" width="320" height="320"></canvas>
+    <div id="pointer"></div>
+</div>
+
+<div id="counter">转动次数: 0</div>
+<button id="reset" onclick="resetCounter()">重新开始</button>
+
+<div class="modal" id="resultModal">
+    <div class="modal-content">
+        <p id="resultText"></p>
+        <button onclick="closeModal()">确认</button>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('wheel');
+    const ctx = canvas.getContext('2d');
+    let numSegments = 6;
+    let currentAngle = 0;
+    let spinning = false;
+    let spinCount = 0;
+    let lastResult = null;
+    let targetAngle = 0;
+
+    const safeColors = [
+        "#FFB347","#77DD77","#AEC6CF","#FFD700","#FF6961",
+        "#B39EB5","#03C03C","#779ECB","#F49AC2","#CFCFC4"
+    ];
+
+    function generateWheel() {
+        numSegments = parseInt(document.getElementById('segments').value) || 6;
+        const angle = 2 * Math.PI / numSegments;
+        const radius = canvas.width / 2;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        for (let i = 0; i < numSegments; i++) {
+            ctx.beginPath();
+            ctx.moveTo(radius, radius);
+            ctx.arc(radius, radius, radius, i * angle, (i + 1) * angle);
+            ctx.closePath();
+            ctx.fillStyle = safeColors[i % safeColors.length];
+            ctx.fill();
+
+            let fontSize = Math.max(10, Math.floor(18 - numSegments / 2));
+            ctx.fillStyle = "black";
+            ctx.font = `${fontSize}px Arial`;
+            ctx.save();
+            ctx.translate(radius, radius);
+            ctx.rotate(i * angle + angle / 2);
+            ctx.textAlign = "right";
+            ctx.fillText(i + 1, radius - 10, 5);
+            ctx.restore();
+        }
+    }
+
+    function spin() {
+        spinCount++;
+        document.getElementById('counter').innerText = `转动次数: ${spinCount}`;
+
+        const extraSpins = Math.floor(Math.random() * 3) + 5;
+        const randomAngle = Math.random() * 2 * Math.PI;
+
+        if (spinning) {
+            targetAngle += 2 * Math.PI;
+            canvas.style.transition = "transform 2s cubic-bezier(0.25, 0.1, 0.25, 1)";
+            canvas.style.transform = `rotate(${targetAngle}rad)`;
+            return;
+        }
+
+        spinning = true;
+        targetAngle = currentAngle + extraSpins * 2 * Math.PI + randomAngle;
+        canvas.style.transition = "transform 4s cubic-bezier(0.25, 0.1, 0.25, 1)";
+        canvas.style.transform = `rotate(${targetAngle}rad)`;
+
+        canvas.addEventListener("transitionend", () => {
+            spinning = false;
+            currentAngle = targetAngle % (2 * Math.PI);
+            const segment = Math.floor((numSegments * currentAngle) / (2 * Math.PI)) % numSegments;
+            lastResult = numSegments - segment || numSegments;
+            setTimeout(() => showResult(lastResult), 800);
+        }, { once: true });
+    }
+
+    function showResult(num) {
+        document.getElementById('resultText').innerText = `您抽中了：${num}`;
+        document.getElementById('resultModal').style.display = "flex";
+    }
+
+    function closeModal() {
+        document.getElementById('resultModal').style.display = "none";
+    }
+
+    function resetCounter() {
+        spinCount = 0;
+        document.getElementById('counter').innerText = "转动次数: 0";
+    }
+
+    canvas.addEventListener("click", () => {
+        if (lastResult && !spinning) {
+            showResult(lastResult);
+        }
+    });
+
+    generateWheel();
+</script>
+</body>
+</html>
