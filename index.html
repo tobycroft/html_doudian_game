@@ -75,7 +75,8 @@
 <div class="container">
     <h1>比特服务 🎉</h1>
     <button class="btn" id="goWheel">进入游戏页面</button>
-    <button class="btn" id="goAddr">填写地址</button>
+    <button class="btn" id="goRand">填写地址</button>
+    <button class="btn" id="goBeat">填写地址</button>
 
     <div class="address-input" id="addrSection" style="display: none;">
         <label for="addrInput" style="font-size: 1.1rem; color: #fff;">请输入地址：</label>
@@ -86,7 +87,8 @@
 
 <script>
     const goWheel = document.getElementById('goWheel');
-    const goAddr = document.getElementById('goAddr');
+    const goRand = document.getElementById('goRand');
+    const goBeat = document.getElementById('goBeat');
     const addrSection = document.getElementById('addrSection');
     const submitAddr = document.getElementById('submitAddr');
     const addrInput = document.getElementById('addrInput');
@@ -94,11 +96,15 @@
     goWheel.addEventListener('click', () => {
         // 这里写跳转到转盘页面的逻辑
         window.location.href = 'wheel.html';
-        alert("跳转到转盘页面（你在这儿填入你项目的 URL）");
+        // alert("跳转到转盘页面（你在这儿填入你项目的 URL）");
     });
 
-    goAddr.addEventListener('click', () => {
-        addrSection.style.display = addrSection.style.display === 'none' ? 'flex' : 'none';
+    goRand.addEventListener('click', () => {
+        window.location.href = 'rand.html';
+    });
+
+    goBeat.addEventListener('click', () => {
+        window.location.href = 'beat.html';
     });
 
     submitAddr.addEventListener('click', () => {
