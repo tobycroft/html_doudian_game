@@ -25,6 +25,10 @@
     </script>
 
     <style type="text/tailwindcss">
+        .text-lg {
+            font-size: 2.125rem;
+            line-height: 2.75rem;
+        }
         @layer utilities {
             .card-shadow {
                 box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
@@ -67,13 +71,13 @@
 <!-- 主内容区域 -->
 <main class="container mx-auto px-4 py-6">
     <div id="content" class="space-y-4">
-        <!-- 初始显示第一张牌选择 -->
+        <!-- 初始显示第一张选择 -->
         <div class="card-option bg-white rounded-xl p-6 card-shadow cursor-pointer transition-all duration-300 hover:bg-gray-50" data-level="1" data-value="SSR">
             <div class="flex items-center">
                 <div class="w-12 h-12 rounded-full bg-ssr flex items-center justify-center mr-4">
                     <span class="font-bold text-gray-800">SSR</span>
                 </div>
-                <span class="text-lg">第一张牌: SSR</span>
+                <span class="text-lg">第一张: SSR</span>
             </div>
         </div>
 
@@ -82,7 +86,7 @@
                 <div class="w-12 h-12 rounded-full bg-sr flex items-center justify-center mr-4">
                     <span class="font-bold text-gray-800">SR</span>
                 </div>
-                <span class="text-lg">第一张牌: SR</span>
+                <span class="text-lg">第一张: SR</span>
             </div>
         </div>
 
@@ -91,7 +95,7 @@
                 <div class="w-12 h-12 rounded-full bg-ur flex items-center justify-center mr-4">
                     <span class="font-bold text-white">UR</span>
                 </div>
-                <span class="text-lg">第一张牌: UR</span>
+                <span class="text-lg">第一张: UR</span>
             </div>
         </div>
 
@@ -100,7 +104,7 @@
                 <div class="w-12 h-12 rounded-full bg-or flex items-center justify-center mr-4">
                     <span class="font-bold text-white">OR</span>
                 </div>
-                <span class="text-lg">第一张牌: OR</span>
+                <span class="text-lg">第一张: OR</span>
             </div>
         </div>
     </div>
@@ -214,15 +218,15 @@
     const backBtn = document.getElementById("backBtn");
     const resetBtn = document.getElementById("resetBtn");
 
-    // 更新面包屑导航（固定显示“第一张牌”，符合抽卡流程）
+    // 更新面包屑导航（固定显示“第一张”，符合抽卡流程）
     function updateBreadcrumb() {
         breadcrumbEl.innerHTML = "";
         currentPath.forEach((item, index) => {
             const breadcrumbItem = document.createElement("div");
             breadcrumbItem.className = `breadcrumb-item ${index === currentPath.length - 1 ? 'text-primary font-bold' : 'text-gray-600'}`;
-            // 处理“第一张牌”显示：第二级固定为“第一张牌: XX”
+            // 处理“第一张”显示：第二级固定为“第一张: XX”
             if (index === 1 && item.includes(":")) {
-                breadcrumbItem.textContent = `第一张牌: ${item.split(":")[1].trim()}`;
+                breadcrumbItem.textContent = `第一张: ${item.split(":")[1].trim()}`;
             } else {
                 breadcrumbItem.textContent = item;
             }
@@ -235,9 +239,9 @@
 
     // 格式化抽卡模式文本（例如：SSR+1 / UR+5）
     function formatModeText() {
-        // 过滤路径中的“首页”和“第一张牌: XX”，保留模式节点
+        // 过滤路径中的“首页”和“第一张: XX”，保留模式节点
         const modeNodes = currentPath.filter(item =>
-            !item.includes("首页") && !item.includes("第一张牌")
+            !item.includes("首页") && !item.includes("第一张")
         );
         // 用“ / ”连接模式节点
         return modeNodes.join(" / ");
@@ -270,7 +274,7 @@
             optionEl.className = "card-option bg-white rounded-xl p-6 card-shadow cursor-pointer transition-all duration-300 hover:bg-gray-50 hover:translate-y-[-2px]";
             optionEl.dataset.value = key;
 
-            // 根据卡牌类型设置徽章样式
+            // 根据卡类型设置徽章样式
             let badgeClass = "bg-gray-200 text-gray-800";
             if (option.display.includes("SSR")) badgeClass = "bg-ssr text-gray-800";
             if (option.display.includes("SR")) badgeClass = "bg-sr text-gray-800";
@@ -304,11 +308,11 @@
             node: currentNode
         });
 
-        // 处理路径文本：第二级为“第一张牌: XX”，其余为模式文本
+        // 处理路径文本：第二级为“第一张: XX”，其余为模式文本
         let pathText = "";
         if (currentPath.length === 1) {
-            // 从第一级到第二级：固定为“第一张牌: XX”
-            pathText = `第一张牌: ${gachaData[key].display}`;
+            // 从第一级到第二级：固定为“第一张: XX”
+            pathText = `第一张: ${gachaData[key].display}`;
         } else {
             // 后续层级：使用选项的display文本（已优化为SSR+1格式）
             pathText = currentNode.next[key].display;
@@ -357,7 +361,7 @@
         updateBreadcrumb();
     }
 
-    // 渲染第一级选项（选择第一张牌）
+    // 渲染第一级选项（选择第一张）
     function renderFirstLevelOptions() {
         contentEl.innerHTML = "";
 
@@ -367,7 +371,7 @@
             optionEl.className = "card-option bg-white rounded-xl p-6 card-shadow cursor-pointer transition-all duration-300 hover:bg-gray-50 hover:translate-y-[-2px]";
             optionEl.dataset.value = key;
 
-            // 卡牌颜色样式
+            // 卡颜色样式
             let bgColor = "bg-gray-200";
             if (key === "SSR") bgColor = "bg-ssr";
             if (key === "SR") bgColor = "bg-sr";
@@ -383,7 +387,7 @@
                         <div class="w-12 h-12 rounded-full ${bgColor} flex items-center justify-center mr-4">
                             <span class="font-bold ${textColor}">${key}</span>
                         </div>
-                        <span class="text-lg">第一张牌: ${key}</span>
+                        <span class="text-lg">第一张: ${key}</span>
                         <i class="fa fa-arrow-right ml-auto text-gray-400"></i>
                     </div>
                 `;
