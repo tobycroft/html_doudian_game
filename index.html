@@ -86,21 +86,15 @@
     <button class="btn" id="goWheel">进入转盘</button>
     <button class="btn" id="goRand">进入随机数</button>
     <button class="btn" id="goBeat">进入跳动随机数</button>
+    <button class="btn" id="dog1">线条小狗超动态1</button>
+    <button class="btn" id="dog2">线条小狗超动态2</button>
 
-    <div class="address-input" id="addrSection" style="display: none;">
-        <label for="addrInput" style="font-size: 1.1rem; color: #fff;">请输入地址：</label>
-        <input type="text" id="addrInput" placeholder="在这里输入地址…"/>
-        <button class="btn" id="submitAddr" style="margin-top: 1rem;">提交地址</button>
-    </div>
 </div>
 
 <script>
     const goWheel = document.getElementById('goWheel');
     const goRand = document.getElementById('goRand');
     const goBeat = document.getElementById('goBeat');
-    // const addrSection = document.getElementById('addrSection');
-    const submitAddr = document.getElementById('submitAddr');
-    const addrInput = document.getElementById('addrInput');
 
     goWheel.addEventListener('click', () => {
         // 这里写跳转到转盘页面的逻辑
@@ -116,15 +110,13 @@
         window.location.href = 'beat.html';
     });
 
-    submitAddr.addEventListener('click', () => {
-        const addr = addrInput.value.trim();
-        if (!addr) {
-            alert("请先输入地址");
-            return;
-        }
-        // 这里你可以保存地址、跳转、调用接口等
-        alert("你输入的地址是：" + addr);
-    });
+    document.getElementById('dog1').addEventListener('click', () => {
+        window.location.href = 'dog1.html';
+    })
+    document.getElementById('dog2').addEventListener('click', () => {
+        window.location.href = 'dog2.html';
+    })
+
 </script>
 </body>
 </html>
