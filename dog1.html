@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>游戏抽卡模式选择</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+
+    <!-- 配置Tailwind自定义颜色 -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        ssr: '#FFD700', // 金色
+                        sr: '#C0C0C0',  // 银色
+                        ur: '#FF6347',  // 红色
+                        or: '#32CD32',  // 绿色
+                        primary: '#165DFF',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .card-shadow {
+                box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+            }
+            .btn-active {
+                transform: translateY(2px);
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            }
+            .breadcrumb-item {
+                position: relative;
+                padding-right: 1.5rem;
+            }
+            .breadcrumb-item:not(:last-child)::after {
+                content: ">";
+                position: absolute;
+                right: 0.5rem;
+            }
+            .mode-text {
+                font-size: clamp(1.5rem, 5vw, 2.5rem); /* 响应式大字体 */
+                width: 85%; /* 占屏幕85%宽度 */
+                margin: 0 auto; /* 居中显示 */
+                line-height: 1.3;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen pb-24">
+<!-- 顶部标题 -->
+<header class="bg-primary text-white py-5 px-6 shadow-md">
+    <h1 class="text-xl md:text-2xl font-bold text-center">抽卡模式选择</h1>
+</header>
+
+<!-- 面包屑导航 - 大尺寸显示 -->
+<div class="bg-white p-4 shadow-sm mt-4">
+    <div id="breadcrumb" class="flex flex-wrap items-center text-lg md:text-xl text-gray-800 font-medium gap-1 overflow-x-auto pb-2">
+        <div class="breadcrumb-item text-primary font-bold">首页</div>
+    </div>
+</div>
+
+<!-- 主内容区域 -->
+<main class="container mx-auto px-4 py-6">
+    <div id="content" class="space-y-4">
+        <!-- 初始显示第一张牌选择 -->
+        <div class="card-option bg-white rounded-xl p-6 card-shadow cursor-pointer transition-all duration-300 hover:bg-gray-50" data-level="1" data-value="SSR">
+            <div class="flex items-center">
+                <div class="w-12 h-12 rounded-full bg-ssr flex items-center justify-center mr-4">
+                    <span class="font-bold text-gray-800">SSR</span>
+                </div>
+                <span class="text-lg">第一张牌: SSR</span>
+            </div>
+        </div>
+
+        <div class="card-option bg-white rounded-xl p-6 card-shadow cursor-pointer transition-all duration-300 hover:bg-gray-50" data-level="1" data-value="SR">
+            <div class="flex items-center">
+                <div class="w-12 h-12 rounded-full bg-sr flex items-center justify-center mr-4">
+                    <span class="font-bold text-gray-800">SR</span>
+                </div>
+                <span class="text-lg">第一张牌: SR</span>
+            </div>
+        </div>
+
+        <div class="card-option bg-white rounded-xl p-6 card-shadow cursor-pointer transition-all duration-300 hover:bg-gray-50" data-level="1" data-value="UR">
+            <div class="flex items-center">
+                <div class="w-12 h-12 rounded-full bg-ur flex items-center justify-center mr-4">
+                    <span class="font-bold text-white">UR</span>
+                </div>
+                <span class="text-lg">第一张牌: UR</span>
+            </div>
+        </div>
+
+        <div class="card-option bg-white rounded-xl p-6 card-shadow cursor-pointer transition-all duration-300 hover:bg-gray-50" data-level="1" data-value="OR">
+            <div class="flex items-center">
+                <div class="w-12 h-12 rounded-full bg-or flex items-center justify-center mr-4">
+                    <span class="font-bold text-white">OR</span>
+                </div>
+                <span class="text-lg">第一张牌: OR</span>
+            </div>
+        </div>
+    </div>
+</main>
+
+<!-- 底部操作按钮 -->
+<footer class="fixed bottom-0 left-0 right-0 bg-white p-4 shadow-lg">
+    <div class="flex gap-4">
+        <button id="backBtn" class="flex-1 bg-gray-500 hover:bg-gray-600 text-white py-4 px-6 rounded-lg transition-all duration-300 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+            <i class="fa fa-arrow-left mr-2"></i> 返回
+        </button>
+        <button id="resetBtn" class="flex-1 bg-red-500 hover:bg-red-600 text-white py-4 px-6 rounded-lg transition-all duration-300 flex items-center justify-center">
+            <i class="fa fa-refresh mr-2"></i> 重置
+        </button>
+    </div>
+</footer>
+
+<script>
+    // 抽卡模式数据结构 - 已优化显示格式：1SSR→SSR+1，5UR→UR+5
+    const gachaData = {
+        SSR: {
+            display: "SSR",
+            next: {
+                "1SSR": { display: "SSR+1", next: {
+                        "1SR": { display: "SR+1", next: null },
+                        "5UR": { display: "UR+5", next: null },
+                        "4UR": { display: "UR+4", next: { "1OR及以上": { display: "OR+1及以上", next: null } } },
+                        "3UR": { display: "UR+3", next: { "2OR及以上": { display: "OR+2及以上", next: null } } },
+                        "2UR": { display: "UR+2", next: { "3OR及以上": { display: "OR+3及以上", next: null } } },
+                        "1UR": { display: "UR+1", next: { "6OR及以上": { display: "OR+6及以上", next: null } } }
+                    }},
+                "2SSR": { display: "SSR+2", next: {
+                        "2UR": { display: "UR+2", next: null },
+                        "1UR": { display: "UR+1", next: { "2OR": { display: "OR+2", next: null } } },
+                        "2OR及以上": { display: "OR+2及以上", next: null }
+                    }}
+            }
+        },
+
+        SR: {
+            display: "SR",
+            next: {
+                "1SR": { display: "SR+1", next: {
+                        "1SSR": { display: "SSR+1", next: null },
+                        "3UR": { display: "UR+3", next: null },
+                        "2UR": { display: "UR+2", next: {
+                                "3OR": { display: "OR+3", next: null },
+                                "1OR及以上": { display: "OR+1及以上", next: null },
+                                "2OR": { display: "OR+2", next: null }
+                            }},
+                        "1UR": { display: "UR+1", next: {
+                                "5OR": { display: "OR+5", next: null },
+                                "2OR": { display: "OR+2", next: null }
+                            }},
+                        "4OR及以上": { display: "OR+4及以上", next: null }
+                    }}
+            }
+        },
+
+        UR: {
+            display: "UR",
+            next: {
+                "8UR": { display: "UR+8", next: null },
+                "7UR": { display: "UR+7", next: { "OR及以上": { display: "OR及以上", next: null } } },
+                "6UR": { display: "UR+6", next: { "3OR及以上": { display: "OR+3及以上", next: null } } },
+                "5UR": { display: "UR+5", next: {
+                        "1SSR": { display: "SSR+1", next: null },
+                        "4OR及以上": { display: "OR+4及以上", next: null }
+                    }},
+                "4UR": { display: "UR+4", next: {
+                        "1SSR": { display: "SSR+1", next: {
+                                "3OR": { display: "OR+3", next: null },
+                                "1OR+": { display: "OR+1", next: null }
+                            }}
+                    }},
+                "3UR": { display: "UR+3", next: {
+                        "1SSR": { display: "SSR+1", next: { "2OR及以上": { display: "OR+2及以上", next: null } } }
+                    }},
+                "2UR": { display: "UR+2", next: {
+                        "1SSR": { display: "SSR+1", next: { "3OR及以上": { display: "OR+3及以上", next: null } } },
+                        "1SR": { display: "SR+1", next: { "1OR及以上": { display: "OR+1及以上", next: null } } }
+                    }},
+                "1UR": { display: "UR+1", next: {
+                        "2SSR": { display: "SSR+2", next: { "2OR": { display: "OR+2", next: null } } },
+                        "1SSR": { display: "SSR+1", next: { "6OR及以上": { display: "OR+6及以上", next: null } } },
+                        "1SR": { display: "SR+1", next: { "2OR": { display: "OR+2", next: null } } }
+                    }}
+            }
+        },
+
+        OR: {
+            display: "OR",
+            next: {
+                "24OR": { display: "OR+24", next: null },
+                "24GR/TR/SP/SSP": { display: "GR/TR/SP/SSP+24", next: null },
+                "12R及以上": { display: "R+12及以上", next: null }
+            }
+        }
+    };
+
+    // 存储当前选择路径
+    let currentPath = ["首页"];
+    // 存储当前数据节点
+    let currentNode = null;
+    // 存储数据访问历史
+    let historyStack = [];
+
+    // DOM元素
+    const breadcrumbEl = document.getElementById("breadcrumb");
+    const contentEl = document.getElementById("content");
+    const backBtn = document.getElementById("backBtn");
+    const resetBtn = document.getElementById("resetBtn");
+
+    // 更新面包屑导航（固定显示“第一张牌”，符合抽卡流程）
+    function updateBreadcrumb() {
+        breadcrumbEl.innerHTML = "";
+        currentPath.forEach((item, index) => {
+            const breadcrumbItem = document.createElement("div");
+            breadcrumbItem.className = `breadcrumb-item ${index === currentPath.length - 1 ? 'text-primary font-bold' : 'text-gray-600'}`;
+            // 处理“第一张牌”显示：第二级固定为“第一张牌: XX”
+            if (index === 1 && item.includes(":")) {
+                breadcrumbItem.textContent = `第一张牌: ${item.split(":")[1].trim()}`;
+            } else {
+                breadcrumbItem.textContent = item;
+            }
+            breadcrumbEl.appendChild(breadcrumbItem);
+        });
+
+        // 控制返回按钮状态
+        backBtn.disabled = currentPath.length <= 1;
+    }
+
+    // 格式化抽卡模式文本（例如：SSR+1 / UR+5）
+    function formatModeText() {
+        // 过滤路径中的“首页”和“第一张牌: XX”，保留模式节点
+        const modeNodes = currentPath.filter(item =>
+            !item.includes("首页") && !item.includes("第一张牌")
+        );
+        // 用“ / ”连接模式节点
+        return modeNodes.join(" / ");
+    }
+
+    // 显示当前层级的选项
+    function renderOptions(options) {
+        contentEl.innerHTML = "";
+
+        // 选择完成：无下一级选项时显示结果
+        if (!options && currentPath.length > 1) {
+            const completeEl = document.createElement("div");
+            completeEl.className = "bg-white rounded-xl p-8 text-center card-shadow";
+            completeEl.innerHTML = `
+                    <div class="text-5xl mb-4 text-primary">
+                        <i class="fa fa-check-circle"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-4">抽卡模式选择完成</h3>
+                    <p class="text-gray-700 mb-2">您选择的抽卡模式是</p>
+                    <p class="mode-text font-bold text-gray-800">${formatModeText()}</p>
+                `;
+            contentEl.appendChild(completeEl);
+            return;
+        }
+
+        // 渲染选项列表
+        Object.keys(options).forEach(key => {
+            const option = options[key];
+            const optionEl = document.createElement("div");
+            optionEl.className = "card-option bg-white rounded-xl p-6 card-shadow cursor-pointer transition-all duration-300 hover:bg-gray-50 hover:translate-y-[-2px]";
+            optionEl.dataset.value = key;
+
+            // 根据卡牌类型设置徽章样式
+            let badgeClass = "bg-gray-200 text-gray-800";
+            if (option.display.includes("SSR")) badgeClass = "bg-ssr text-gray-800";
+            if (option.display.includes("SR")) badgeClass = "bg-sr text-gray-800";
+            if (option.display.includes("UR")) badgeClass = "bg-ur text-white";
+            if (option.display.includes("OR")) badgeClass = "bg-or text-white";
+            if (option.display.includes("GR") || option.display.includes("TR") || option.display.includes("SP") || option.display.includes("R")) {
+                badgeClass = "bg-purple-500 text-white";
+            }
+
+            // 提取徽章文本（例如：SSR+1 → SSR）
+            const badgeText = option.display.replace(/[+0-9及以上]/g, "").trim() || "模式";
+            optionEl.innerHTML = `
+                    <div class="flex items-center">
+                        <div class="w-12 h-12 rounded-full ${badgeClass} flex items-center justify-center mr-4 font-bold">
+                            ${badgeText}
+                        </div>
+                        <span class="text-lg">${option.display}</span>
+                        ${option.next ? '<i class="fa fa-arrow-right ml-auto text-gray-400"></i>' : ''}
+                    </div>
+                `;
+
+            contentEl.appendChild(optionEl);
+        });
+    }
+
+    // 处理选项点击
+    function handleOptionClick(key) {
+        // 记录当前状态到历史栈
+        historyStack.push({
+            path: [...currentPath],
+            node: currentNode
+        });
+
+        // 处理路径文本：第二级为“第一张牌: XX”，其余为模式文本
+        let pathText = "";
+        if (currentPath.length === 1) {
+            // 从第一级到第二级：固定为“第一张牌: XX”
+            pathText = `第一张牌: ${gachaData[key].display}`;
+        } else {
+            // 后续层级：使用选项的display文本（已优化为SSR+1格式）
+            pathText = currentNode.next[key].display;
+        }
+        currentPath.push(pathText);
+
+        // 更新当前节点
+        if (currentPath.length === 2) {
+            currentNode = gachaData[key];
+        } else {
+            currentNode = currentNode.next[key];
+        }
+
+        // 渲染下一级选项
+        renderOptions(currentNode ? currentNode.next : null);
+
+        // 更新面包屑
+        updateBreadcrumb();
+    }
+
+    // 返回上一步
+    function goBack() {
+        if (historyStack.length > 0) {
+            const previousState = historyStack.pop();
+            currentPath = previousState.path;
+            currentNode = previousState.node;
+
+            // 渲染上一级选项
+            if (currentPath.length === 1) {
+                renderFirstLevelOptions();
+            } else {
+                renderOptions(currentNode ? currentNode.next : null);
+            }
+
+            // 更新面包屑
+            updateBreadcrumb();
+        }
+    }
+
+    // 重置所有选择
+    function resetAll() {
+        currentPath = ["首页"];
+        currentNode = null;
+        historyStack = [];
+        renderFirstLevelOptions();
+        updateBreadcrumb();
+    }
+
+    // 渲染第一级选项（选择第一张牌）
+    function renderFirstLevelOptions() {
+        contentEl.innerHTML = "";
+
+        Object.keys(gachaData).forEach(key => {
+            const option = gachaData[key];
+            const optionEl = document.createElement("div");
+            optionEl.className = "card-option bg-white rounded-xl p-6 card-shadow cursor-pointer transition-all duration-300 hover:bg-gray-50 hover:translate-y-[-2px]";
+            optionEl.dataset.value = key;
+
+            // 卡牌颜色样式
+            let bgColor = "bg-gray-200";
+            if (key === "SSR") bgColor = "bg-ssr";
+            if (key === "SR") bgColor = "bg-sr";
+            if (key === "UR") bgColor = "bg-ur";
+            if (key === "OR") bgColor = "bg-or";
+
+            // 文字颜色
+            let textColor = "text-gray-800";
+            if (key === "UR" || key === "OR") textColor = "text-white";
+
+            optionEl.innerHTML = `
+                    <div class="flex items-center">
+                        <div class="w-12 h-12 rounded-full ${bgColor} flex items-center justify-center mr-4">
+                            <span class="font-bold ${textColor}">${key}</span>
+                        </div>
+                        <span class="text-lg">第一张牌: ${key}</span>
+                        <i class="fa fa-arrow-right ml-auto text-gray-400"></i>
+                    </div>
+                `;
+
+            contentEl.appendChild(optionEl);
+        });
+    }
+
+    // 绑定事件监听
+    contentEl.addEventListener("click", (e) => {
+        const optionEl = e.target.closest(".card-option");
+        if (optionEl) {
+            // 点击动画反馈
+            optionEl.classList.add("btn-active");
+            setTimeout(() => {
+                optionEl.classList.remove("btn-active");
+                const key = optionEl.dataset.value;
+                handleOptionClick(key);
+            }, 200);
+        }
+    });
+
+    backBtn.addEventListener("click", goBack);
+    resetBtn.addEventListener("click", resetAll);
+
+    // 初始化页面
+    updateBreadcrumb();
+</script>
+</body>
+</html>
