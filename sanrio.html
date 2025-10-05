@@ -1,10 +1,552 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>抽卡模拟器 - 模式选择</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #fff;
+            min-height: 100vh;
+            padding: 0 1rem;
+            font-size: 3rem;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 25px;
+            padding-bottom: 0px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        h1 {
+            font-size: 32px;
+            margin-bottom: 10px;
+            background: linear-gradient(90deg, #ffd700, #ff8c00);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .breadcrumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 18px;
+            margin-bottom: 20px;
+            font-size: 22px;
+            text-align: center;
+            min-height: 70px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            flex-wrap: wrap;
+        }
+
+        .breadcrumb span {
+            color: #ffd700;
+            font-weight: bold;
+            margin: 0 5px;
+        }
+
+        .breadcrumb .separator {
+            margin: 0 10px;
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .card-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 2rem;
+            padding: 0 1rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 140px;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .card-cr {
+            background: linear-gradient(135deg, #ff8c00, #ff4500);
+        }
+
+        .card-ur {
+            background: linear-gradient(135deg, #2196f3, #03a9f4);
+        }
+
+        .card-dp {
+            background: linear-gradient(135deg, #4caf50, #8bc34a);
+        }
+
+        .card-lr {
+            background: linear-gradient(135deg, #9c27b0, #673ab7);
+        }
+
+        .card-type {
+            font-size: 6rem;
+            font-weight: bold;
+        }
+
+        .card-desc {
+            font-size: 18px;
+            opacity: 0.9;
+        }
+
+        .mode-list {
+            display: none;
+            margin-top: 20px;
+        }
+
+        .mode-item {
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 22px 18px;
+            margin-bottom: 15px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border-left: 5px solid;
+        }
+
+        .mode-item:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateX(5px);
+        }
+
+        .mode-name {
+            font-size: 22px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .mode-path {
+            font-size: 18px;
+            opacity: 0.8;
+        }
+
+        .controls {
+            display: flex;
+            gap: 20px;
+            margin-top: 25px;
+        }
+
+        button {
+            flex: 1;
+            padding: 20px;
+            border: none;
+            border-radius: 12px;
+            font-size: 20px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-back {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        .btn-reset {
+            background: linear-gradient(135deg, #ff5252, #ff1744);
+            color: white;
+        }
+
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .selected-mode {
+            background: rgba(255, 215, 0, 0.2);
+            border: 2px solid #ffd700;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            margin-top: 25px;
+            display: none;
+        }
+
+        .selected-mode h3 {
+            font-size: 26px;
+            margin-bottom: 15px;
+            color: #ffd700;
+        }
+
+        .selected-mode p {
+            font-size: 24px;
+            font-weight: bold;
+            line-height: 1.4;
+        }
+
+        .final-modes {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .final-mode-item {
+            font-size: 4rem;
+            font-weight: bold;
+            text-align: center;
+            line-height: 1.2;
+            padding: 10px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        /* 卡牌类型颜色 */
+        .cr-mode {
+            border-left-color: #ff8c00;
+        }
+
+        .ur-mode {
+            border-left-color: #2196f3;
+        }
+
+        .dp-mode {
+            border-left-color: #4caf50;
+        }
+
+        .lr-mode {
+            border-left-color: #9c27b0;
+        }
+
+        @media (max-width: 480px) {
+            body {
+                font-size: 3rem;
+                padding: 0 1rem;
+            }
+
+            .card-grid {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+
+            .card {
+                min-height: 120px;
+                border-radius: 2rem;
+                padding: 0 1rem;
+            }
+
+            .breadcrumb {
+                font-size: 20px;
+                padding: 15px;
+            }
+
+            .mode-item {
+                padding: 20px 15px;
+            }
+
+            .mode-name {
+                font-size: 3rem;
+            }
+
+            .mode-path {
+                font-size: 16px;
+            }
+
+            button {
+                padding: 18px;
+                font-size: 18px;
+            }
+
+            .selected-mode {
+                padding: 25px 20px;
+            }
+
+            .selected-mode h3 {
+                font-size: 22px;
+            }
+
+            .selected-mode p {
+                font-size: 20px;
+            }
+
+            .final-mode-item {
+                font-size: 6rem;
+            }
+        }
+    </style>
 </head>
 <body>
+<div class="container">
+    <div class="breadcrumb" id="breadcrumb">
+        请选择卡牌类型
+    </div>
 
+    <div class="card-grid" id="cardSelection">
+        <div class="card card-cr" data-type="CR">
+            <div class="card-type">CR</div>
+            <div class="card-desc">概率9/20</div>
+        </div>
+        <div class="card card-ur" data-type="UR">
+            <div class="card-type">UR</div>
+            <div class="card-desc">概率6/20</div>
+        </div>
+        <div class="card card-dp" data-type="DP">
+            <div class="card-type">DP</div>
+            <div class="card-desc">概率3/20</div>
+        </div>
+        <div class="card card-lr" data-type="LR">
+            <div class="card-type">LR+</div>
+            <div class="card-desc">概率1/20</div>
+        </div>
+    </div>
+
+    <div class="mode-list" id="modeList"></div>
+
+    <div class="selected-mode" id="selectedMode">
+        <h3>您选择的模式是：</h3>
+        <div class="final-modes" id="finalModes"></div>
+    </div>
+
+    <div class="controls">
+        <button class="btn-back" id="backButton">返回</button>
+        <button class="btn-reset" id="resetButton">重置</button>
+    </div>
+</div>
+
+<script>
+    // 抽卡模式数据结构
+    const drawModes = {
+        CR: {
+            "CR+1/UR+1/LR+1": null,
+            "CR+1/UR+1/其他高卡+1": null,
+            "CR+1/DP+2/LR+1": null,
+            "CR+1/DP+2/其他高卡+1": null,
+            "CR+1/DP+1/LR及其他高卡+6": null,
+            "CR+1/LR+7": null,
+            "CR+1/其他高卡位+7": null,
+            "CR+1/LR及其他高卡位+3": null
+        },
+        UR: {
+            "UR+2/DP+1/LR+1": null,
+            "UR+2/DP+1/其他高卡位+1": null,
+            "UR+2/LR及以上+2": null,
+            "UR+2/LR+2": null,
+            "UR+2/其他高卡位+2": null
+        },
+        DP: {
+            "DP+5/LR+1": null,
+            "DP+5/其他高卡位+1": null,
+            "DP+4/LR+4": null,
+            "DP+4/其他高卡位+4": null,
+            "DP+4/LR及其他高卡位+2": null,
+            "DP+3/LR+1": null,
+            "DP+3/其他高卡位+1": null,
+            "DP+2/CR+1/LR+1": null,
+            "DP+2/CR+1/其他高卡位+1": null
+        },
+        LR: {
+            "LR+16": null,
+            "高卡位+16": null,
+            "LR及隐藏款+8": null
+        }
+    };
+
+    // 获取卡牌类型
+    function getCardType(mode) {
+        if (mode.includes("CR")) return "cr-mode";
+        if (mode.includes("UR")) return "ur-mode";
+        if (mode.includes("DP")) return "dp-mode";
+        if (mode.includes("LR") || mode.includes("高卡位") || mode.includes("隐藏款")) {
+            return "lr-mode";
+        }
+        return "";
+    }
+
+    // DOM元素
+    const cardSelection = document.getElementById('cardSelection');
+    const modeList = document.getElementById('modeList');
+    const breadcrumb = document.getElementById('breadcrumb');
+    const backButton = document.getElementById('backButton');
+    const resetButton = document.getElementById('resetButton');
+    const selectedMode = document.getElementById('selectedMode');
+    const finalModes = document.getElementById('finalModes');
+
+    // 状态变量
+    let currentPath = [];
+    let currentMode = null;
+
+    // 初始化事件监听
+    function init() {
+        // 卡片选择事件
+        document.querySelectorAll('.card').forEach(card => {
+            card.addEventListener('click', () => {
+                const cardType = card.getAttribute('data-type');
+                selectCardType(cardType);
+            });
+        });
+
+        // 返回按钮事件
+        backButton.addEventListener('click', goBack);
+
+        // 重置按钮事件
+        resetButton.addEventListener('click', resetSelection);
+    }
+
+    // 选择卡片类型
+    function selectCardType(cardType) {
+        currentPath = [cardType];
+        updateBreadcrumb();
+
+        // 隐藏卡片选择，显示模式列表
+        cardSelection.style.display = 'none';
+        modeList.style.display = 'block';
+
+        // 显示该类型的模式
+        showModes(drawModes[cardType]);
+
+        // 隐藏已选模式
+        selectedMode.style.display = 'none';
+    }
+
+    // 显示模式列表
+    function showModes(modes) {
+        modeList.innerHTML = '';
+
+        if (!modes) return;
+
+        Object.keys(modes).forEach(mode => {
+            const modeItem = document.createElement('div');
+            modeItem.className = `mode-item ${getCardType(mode)}`;
+            modeItem.innerHTML = `
+                    <div class="mode-name">${mode}</div>
+                    <div class="mode-path">${getModePathText([...currentPath, mode])}</div>
+                `;
+            modeItem.addEventListener('click', () => selectMode(mode, modes[mode]));
+            modeList.appendChild(modeItem);
+        });
+    }
+
+    // 选择模式
+    function selectMode(mode, subModes) {
+        currentPath.push(mode);
+        updateBreadcrumb();
+
+        if (subModes) {
+            // 还有子模式，显示子模式
+            showModes(subModes);
+        } else {
+            // 没有子模式，选择完成
+            // 只显示模式路径，不显示卡牌类型
+            showFinalModes(currentPath.slice(1));
+            selectedMode.style.display = 'block';
+            modeList.style.display = 'none';
+        }
+    }
+
+    // 显示最终选择的模式（大字体换行显示）
+    function showFinalModes(modes) {
+        finalModes.innerHTML = '';
+
+        modes.forEach(mode => {
+            const modeItem = document.createElement('div');
+            modeItem.className = 'final-mode-item';
+            modeItem.textContent = mode;
+            finalModes.appendChild(modeItem);
+        });
+    }
+
+    // 更新面包屑导航
+    function updateBreadcrumb() {
+        if (currentPath.length === 0) {
+            breadcrumb.innerHTML = '请选择卡牌类型';
+            return;
+        }
+
+        let breadcrumbHTML = '';
+
+        currentPath.forEach((segment, index) => {
+            if (index === 0) {
+                breadcrumbHTML += `<span>卡牌类型: ${segment}</span>`;
+            } else {
+                breadcrumbHTML += `<span class="separator">/</span><span>第${index}包: ${segment}</span>`;
+            }
+        });
+
+        breadcrumb.innerHTML = breadcrumbHTML;
+    }
+
+    // 获取模式路径文本
+    function getModePathText(path) {
+        if (path.length === 1) {
+            return `卡牌类型: ${path[0]}`;
+        } else {
+            let result = `卡牌类型: ${path[0]}`;
+            for (let i = 1; i < path.length; i++) {
+                result += ` → 第${i}包: ${path[i]}`;
+            }
+            return result;
+        }
+    }
+
+    // 返回上一级
+    function goBack() {
+        if (currentPath.length === 0) return;
+
+        if (currentPath.length === 1) {
+            // 如果当前在模式列表，返回到卡片选择
+            resetSelection();
+        } else {
+            // 返回上一级模式
+            currentPath.pop();
+            updateBreadcrumb();
+
+            // 获取当前路径对应的模式
+            let modes = drawModes;
+            for (let i = 0; i < currentPath.length; i++) {
+                modes = modes[currentPath[i]];
+            }
+
+            // 显示模式列表
+            showModes(modes);
+
+            // 隐藏已选模式
+            selectedMode.style.display = 'none';
+            modeList.style.display = 'block';
+        }
+    }
+
+    // 重置选择
+    function resetSelection() {
+        currentPath = [];
+        currentMode = null;
+        cardSelection.style.display = 'grid';
+        modeList.style.display = 'none';
+        selectedMode.style.display = 'none';
+        breadcrumb.innerHTML = '请选择卡牌类型';
+    }
+
+    // 初始化应用
+    init();
+</script>
 </body>
 </html>
