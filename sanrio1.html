@@ -16,8 +16,7 @@
             background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
             color: #fff;
             min-height: 100vh;
-            padding: 0 1rem;
-            font-size: 3rem;
+            padding: 20px 15px;
         }
 
         .container {
@@ -28,7 +27,7 @@
         header {
             text-align: center;
             margin-bottom: 25px;
-            padding-bottom: 0px;
+            padding-bottom: 15px;
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         }
 
@@ -43,11 +42,11 @@
         .breadcrumb {
             background: rgba(255, 255, 255, 0.1);
             border-radius: 10px;
-            padding: 18px;
+            padding: 15px;
             margin-bottom: 20px;
-            font-size: 22px;
+            font-size: 18px;
             text-align: center;
-            min-height: 70px;
+            min-height: 60px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -69,14 +68,14 @@
         .card-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            margin-bottom: 30px;
+            gap: 15px;
+            margin-bottom: 25px;
         }
 
         .card {
             background: rgba(255, 255, 255, 0.1);
-            border-radius: 2rem;
-            padding: 0 1rem;
+            border-radius: 1.5rem;
+            padding: 15px 10px;
             text-align: center;
             cursor: pointer;
             transition: all 0.3s ease;
@@ -85,7 +84,7 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            min-height: 140px;
+            min-height: 120px;
         }
 
         .card:hover {
@@ -110,12 +109,12 @@
         }
 
         .card-type {
-            font-size: 6rem;
+            font-size: 4rem;
             font-weight: bold;
         }
 
         .card-desc {
-            font-size: 18px;
+            font-size: 16px;
             opacity: 0.9;
         }
 
@@ -127,8 +126,8 @@
         .mode-item {
             background: rgba(255, 255, 255, 0.08);
             border-radius: 12px;
-            padding: 22px 18px;
-            margin-bottom: 15px;
+            padding: 18px 15px;
+            margin-bottom: 12px;
             cursor: pointer;
             transition: all 0.2s ease;
             border-left: 5px solid;
@@ -140,28 +139,28 @@
         }
 
         .mode-name {
-            font-size: 22px;
+            font-size: 20px;
             font-weight: bold;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
         }
 
         .mode-path {
-            font-size: 18px;
+            font-size: 16px;
             opacity: 0.8;
         }
 
         .controls {
             display: flex;
-            gap: 20px;
-            margin-top: 25px;
+            gap: 15px;
+            margin-top: 20px;
         }
 
         button {
             flex: 1;
-            padding: 20px;
+            padding: 16px;
             border: none;
             border-radius: 12px;
-            font-size: 20px;
+            font-size: 18px;
             font-weight: bold;
             cursor: pointer;
             transition: all 0.3s ease;
@@ -185,21 +184,21 @@
         .selected-mode {
             background: rgba(255, 215, 0, 0.2);
             border: 2px solid #ffd700;
-            padding: 30px;
+            padding: 25px;
             border-radius: 15px;
             text-align: center;
-            margin-top: 25px;
+            margin-top: 20px;
             display: none;
         }
 
         .selected-mode h3 {
-            font-size: 26px;
-            margin-bottom: 15px;
+            font-size: 22px;
+            margin-bottom: 12px;
             color: #ffd700;
         }
 
         .selected-mode p {
-            font-size: 24px;
+            font-size: 20px;
             font-weight: bold;
             line-height: 1.4;
         }
@@ -207,17 +206,17 @@
         .final-modes {
             display: flex;
             flex-direction: column;
-            gap: 15px;
-            margin-top: 20px;
+            gap: 12px;
+            margin-top: 15px;
         }
 
         .final-mode-item {
-            font-size: 4rem;
+            font-size: 2.8rem;
             font-weight: bold;
             text-align: center;
             line-height: 1.2;
-            padding: 10px;
-            border-radius: 10px;
+            padding: 8px;
+            border-radius: 8px;
             background: rgba(255, 255, 255, 0.1);
         }
 
@@ -240,63 +239,71 @@
 
         @media (max-width: 480px) {
             body {
-                font-size: 3rem;
-                padding: 0 1rem;
+                padding: 15px 10px;
             }
 
             .card-grid {
                 grid-template-columns: 1fr;
-                gap: 15px;
+                gap: 12px;
             }
 
             .card {
-                min-height: 120px;
-                border-radius: 2rem;
-                padding: 0 1rem;
+                min-height: 110px;
+                border-radius: 1.5rem;
+                padding: 12px 8px;
+            }
+
+            .card-type {
+                font-size: 3.5rem;
             }
 
             .breadcrumb {
-                font-size: 20px;
-                padding: 15px;
+                font-size: 16px;
+                padding: 12px;
             }
 
             .mode-item {
-                padding: 20px 15px;
+                padding: 16px 12px;
             }
 
             .mode-name {
-                font-size: 3rem;
-            }
-
-            .mode-path {
-                font-size: 16px;
-            }
-
-            button {
-                padding: 18px;
                 font-size: 18px;
             }
 
+            .mode-path {
+                font-size: 14px;
+            }
+
+            button {
+                padding: 14px;
+                font-size: 16px;
+            }
+
             .selected-mode {
-                padding: 25px 20px;
+                padding: 20px 15px;
             }
 
             .selected-mode h3 {
-                font-size: 22px;
-            }
-
-            .selected-mode p {
                 font-size: 20px;
             }
 
+            .selected-mode p {
+                font-size: 18px;
+            }
+
             .final-mode-item {
-                font-size: 6rem;
+                font-size: 2.2rem;
             }
         }
     </style>
 </head>
 <body>
 <div class="container">
+    <header>
+        <h1>抽卡模拟器</h1>
+        <p>选择您想要的抽卡模式</p>
+    </header>
+
     <div class="breadcrumb" id="breadcrumb">
         请选择卡牌类型
     </div>
@@ -334,7 +341,7 @@
 </div>
 
 <script>
-    // 抽卡模式数据结构 - 已优化，合并了同类项
+    // 抽卡模式数据结构 - 完整版
     const drawModes = {
         CR: {
             "CR+1": {
@@ -363,6 +370,32 @@
                 "LR及以上+2": null,
                 "LR+2": null,
                 "其他高卡位+2": null
+            },
+            "UR+1": {
+                "DP+3": {
+                    "LR+1": null,
+                    "其他高卡位+1": null
+                },
+                "DP+2": {
+                    "LR+4": null,
+                    "其他高卡位+1": null,
+                    "LR及其他高卡位+1": null
+                },
+                "DP+1": {
+                    "LR+7": null,
+                    "其他高卡位+7": null,
+                    "LR及以上+3": null
+                },
+                "CR+1": {
+                    "LR+1": null,
+                    "其他高卡位+1": null
+                },
+                "UR+2": {
+                    "LR+1": null
+                },
+                "UR+1": {
+                    "LR+3": null
+                }
             }
         },
         DP: {
@@ -377,12 +410,34 @@
             },
             "DP+3": {
                 "LR+1": null,
-                "其他高卡位+1": null
+                "其他高卡位+1": null,
+                "UR+1": {
+                    "LR+1": null
+                },
+                "LR+7": null,
+                "LR及以上+3": null
             },
             "DP+2": {
                 "CR+1": {
                     "LR+1": null,
                     "其他高卡位+1": null
+                },
+                "UR+1": {
+                    "LR+1": null
+                }
+            },
+            "DP+1": {
+                "CR+1": {
+                    "LR+4": null,
+                    "其他高卡位+4": null,
+                    "LR及以上+2": null
+                },
+                "UR+2": {
+                    "LR+1": null
+                },
+                "UR+1": {
+                    "LR+7": null,
+                    "LR及以上+3": null
                 }
             }
         },
@@ -415,7 +470,6 @@
 
     // 状态变量
     let currentPath = [];
-    let currentMode = null;
 
     // 初始化事件监听
     function init() {
@@ -565,7 +619,6 @@
     // 重置选择
     function resetSelection() {
         currentPath = [];
-        currentMode = null;
         cardSelection.style.display = 'grid';
         modeList.style.display = 'none';
         selectedMode.style.display = 'none';
