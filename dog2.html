@@ -112,7 +112,6 @@
         .card-type {
             font-size: 6rem;
             font-weight: bold;
-            /*margin-bottom: 1px;*/
         }
 
         .card-desc {
@@ -298,13 +297,8 @@
 </head>
 <body>
 <div class="container">
-    <!--    <header>-->
-    <!--        <h1>抽卡模拟器</h1>-->
-    <!--        <p>选择您的抽卡模式</p>-->
-    <!--    </header>-->
-
     <div class="breadcrumb" id="breadcrumb">
-        请选择第一张
+        请选择卡牌类型
     </div>
 
     <div class="card-grid" id="cardSelection">
@@ -582,17 +576,14 @@
             currentPath.pop();
             updateBreadcrumb();
 
-            if (currentPath.length === 1) {
-                // 返回到第一级模式列表
-                showModes(drawModes[currentPath[0]]);
-            } else {
-                // 返回到上一级模式列表
-                let modes = drawModes;
-                for (let i = 1; i < currentPath.length; i++) {
-                    modes = modes[currentPath[i]];
-                }
-                showModes(modes);
+            // 获取当前路径对应的模式
+            let modes = drawModes;
+            for (let i = 0; i < currentPath.length; i++) {
+                modes = modes[currentPath[i]];
             }
+
+            // 显示模式列表
+            showModes(modes);
 
             // 隐藏已选模式
             selectedMode.style.display = 'none';
