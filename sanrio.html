@@ -334,35 +334,57 @@
 </div>
 
 <script>
-    // 抽卡模式数据结构
+    // 抽卡模式数据结构 - 已优化，合并了同类项
     const drawModes = {
         CR: {
-            "CR+1/UR+1/LR+1": null,
-            "CR+1/UR+1/其他高卡+1": null,
-            "CR+1/DP+2/LR+1": null,
-            "CR+1/DP+2/其他高卡+1": null,
-            "CR+1/DP+1/LR及其他高卡+6": null,
-            "CR+1/LR+7": null,
-            "CR+1/其他高卡位+7": null,
-            "CR+1/LR及其他高卡位+3": null
+            "CR+1": {
+                "UR+1": {
+                    "LR+1": null,
+                    "其他高卡+1": null
+                },
+                "DP+2": {
+                    "LR+1": null,
+                    "其他高卡+1": null
+                },
+                "DP+1": {
+                    "LR及其他高卡+6": null
+                },
+                "LR+7": null,
+                "其他高卡位+7": null,
+                "LR及其他高卡位+3": null
+            }
         },
         UR: {
-            "UR+2/DP+1/LR+1": null,
-            "UR+2/DP+1/其他高卡位+1": null,
-            "UR+2/LR及以上+2": null,
-            "UR+2/LR+2": null,
-            "UR+2/其他高卡位+2": null
+            "UR+2": {
+                "DP+1": {
+                    "LR+1": null,
+                    "其他高卡位+1": null
+                },
+                "LR及以上+2": null,
+                "LR+2": null,
+                "其他高卡位+2": null
+            }
         },
         DP: {
-            "DP+5/LR+1": null,
-            "DP+5/其他高卡位+1": null,
-            "DP+4/LR+4": null,
-            "DP+4/其他高卡位+4": null,
-            "DP+4/LR及其他高卡位+2": null,
-            "DP+3/LR+1": null,
-            "DP+3/其他高卡位+1": null,
-            "DP+2/CR+1/LR+1": null,
-            "DP+2/CR+1/其他高卡位+1": null
+            "DP+5": {
+                "LR+1": null,
+                "其他高卡位+1": null
+            },
+            "DP+4": {
+                "LR+4": null,
+                "其他高卡位+4": null,
+                "LR及其他高卡位+2": null
+            },
+            "DP+3": {
+                "LR+1": null,
+                "其他高卡位+1": null
+            },
+            "DP+2": {
+                "CR+1": {
+                    "LR+1": null,
+                    "其他高卡位+1": null
+                }
+            }
         },
         LR: {
             "LR+16": null,
@@ -456,7 +478,7 @@
             showModes(subModes);
         } else {
             // 没有子模式，选择完成
-            // 只显示模式路径，不显示卡牌类型
+            // 显示完整的模式路径
             showFinalModes(currentPath.slice(1));
             selectedMode.style.display = 'block';
             modeList.style.display = 'none';
@@ -467,12 +489,17 @@
     function showFinalModes(modes) {
         finalModes.innerHTML = '';
 
-        modes.forEach(mode => {
-            const modeItem = document.createElement('div');
-            modeItem.className = 'final-mode-item';
-            modeItem.textContent = mode;
-            finalModes.appendChild(modeItem);
-        });
+        // 构建完整的模式路径
+        let fullPath = "";
+        for (let i = 0; i < modes.length; i++) {
+            if (i > 0) fullPath += " → ";
+            fullPath += modes[i];
+        }
+
+        const modeItem = document.createElement('div');
+        modeItem.className = 'final-mode-item';
+        modeItem.textContent = fullPath;
+        finalModes.appendChild(modeItem);
     }
 
     // 更新面包屑导航
@@ -488,7 +515,7 @@
             if (index === 0) {
                 breadcrumbHTML += `<span>卡牌类型: ${segment}</span>`;
             } else {
-                breadcrumbHTML += `<span class="separator">/</span><span>第${index}包: ${segment}</span>`;
+                breadcrumbHTML += `<span class="separator">/</span><span>第${index}步: ${segment}</span>`;
             }
         });
 
@@ -502,7 +529,7 @@
         } else {
             let result = `卡牌类型: ${path[0]}`;
             for (let i = 1; i < path.length; i++) {
-                result += ` → 第${i}包: ${path[i]}`;
+                result += ` → 第${i}步: ${path[i]}`;
             }
             return result;
         }
