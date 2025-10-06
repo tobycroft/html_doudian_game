@@ -98,31 +98,20 @@
 </div>
 
 <script>
-    const goWheel = document.getElementById('goWheel');
-    const goRand = document.getElementById('goRand');
 
-    goWheel.addEventListener('click', () => {
-        // 这里写跳转到转盘页面的逻辑
-        window.location.href = 'wheel.html';
-        // alert("跳转到转盘页面（你在这儿填入你项目的 URL）");
-    });
+    const btns = document.getElementsByClassName('btn')
+    for (const i in btns) {
+        if (btns[i].id) {
+            document.getElementById(btns[i].id).addEventListener('click', (that) => {
+                window.location.href = that.target.id + '.html';
+            })
+        } else {
+            console.log(btns[i])
 
-    goRand.addEventListener('click', () => {
-        window.location.href = 'rand.html';
-    });
+        }
 
-    // document.getElementById('dog1').addEventListener('click', () => {
-    //     window.location.href = 'dog1.html';
-    // })
-    document.getElementById('youduoqu1').addEventListener('click', (that) => {
-        window.location.href = that.target.id + '.html';
-    })
-    document.getElementById('dog2').addEventListener('click', (that) => {
-        window.location.href = that.target.id + '.html';
-    })
-    document.getElementById('sanrio1').addEventListener('click', (that) => {
-        window.location.href = that.target.id + '.html';
-    })
+
+    }
 
 </script>
 </body>
