@@ -367,17 +367,17 @@
             "CR+1": {
                 "UR+1": {
                     "LR+1": null,
-                    "其他高卡+1": null
+                    "SP/AR等+1": null
                 },
                 "DP+2": {
                     "LR+1": null,
-                    "其他高卡+1": null
+                    "SP/AR等+1": null
                 },
                 "DP+1": {
                     "LR及高卡+6": null
                 },
                 "LR+7": null,
-                "其他高卡位+7": null,
+                "SP/AR等+7": null,
                 "LR及高卡+3": null
             }
         },
@@ -385,30 +385,30 @@
             "UR+2": {
                 "DP+1": {
                     "LR+1": null,
-                    "其他高卡位+1": null
+                    "SP/AR等+1": null
                 },
                 "LR及高卡+2": null,
                 "LR+2": null,
-                "其他高卡位+2": null
+                "SP/AR等+2": null
             },
             "UR+1": {
                 "DP+3": {
                     "LR+1": null,
-                    "其他高卡位+1": null
+                    "SP/AR等+1": null
                 },
                 "DP+2": {
                     "LR+4": null,
-                    "其他高卡位+1": null,
-                    "LR及其他高卡位+1": null
+                    "SP/AR等+1": null,
+                    "LR及SP/AR等+1": null
                 },
                 "DP+1": {
                     "LR+7": null,
-                    "其他高卡位+7": null,
+                    "SP/AR等+7": null,
                     "LR及高卡+3": null
                 },
                 "CR+1": {
                     "LR+1": null,
-                    "其他高卡位+1": null
+                    "SP/AR等+1": null
                 },
                 "UR+2": {
                     "LR+1": null
@@ -421,16 +421,16 @@
         DP: {
             "DP+5": {
                 "LR+1": null,
-                "其他高卡位+1": null
+                "SP/AR等+1": null
             },
             "DP+4": {
                 "LR+4": null,
-                "其他高卡位+4": null,
-                "LR及其他高卡位+2": null
+                "SP/AR等+4": null,
+                "LR及SP/AR等+2": null
             },
             "DP+3": {
                 "LR+1": null,
-                "其他高卡位+1": null,
+                "SP/AR等+1": null,
                 "UR+1": {
                     "LR+1": null
                 },
@@ -440,7 +440,7 @@
             "DP+2": {
                 "CR+1": {
                     "LR+1": null,
-                    "其他高卡位+1": null
+                    "SP/AR等+1": null
                 },
                 "UR+1": {
                     "LR+1": null
@@ -449,7 +449,7 @@
             "DP+1": {
                 "CR+1": {
                     "LR+4": null,
-                    "其他高卡位+4": null,
+                    "SP/AR等+4": null,
                     "LR及高卡+2": null
                 },
                 "UR+2": {
@@ -463,8 +463,8 @@
         },
         LR: {
             "LR+16": null,
-            "高卡位+16": null,
-            "LR及隐藏款+8": null
+            "SP/AR等+16": null,
+            "LR及SP/AR等+8": null
         }
     };
 
@@ -473,7 +473,7 @@
         if (mode.includes("CR")) return "cr-mode";
         if (mode.includes("UR")) return "ur-mode";
         if (mode.includes("DP")) return "dp-mode";
-        if (mode.includes("LR") || mode.includes("高卡位") || mode.includes("隐藏款")) {
+        if (mode.includes("LR") || mode.includes("SP/AR等") || mode.includes("隐藏款")) {
             return "lr-mode";
         }
         return "";
