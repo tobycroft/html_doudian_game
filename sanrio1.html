@@ -95,6 +95,7 @@
 
         .card-cr {
             background: linear-gradient(135deg, #ff8c00, #ff4500);
+            padding-bottom: 1.5rem;
         }
 
         .card-ur {
@@ -110,7 +111,7 @@
         }
 
         .card-type {
-            font-size: 6rem;
+            font-size: 8rem;
             font-weight: bold;
         }
 
@@ -125,22 +126,22 @@
         }
 
         .mode-item {
-            background: rgba(255, 255, 255, 0.08);
-            border-radius: 0.75rem;
+            background: rgba(255, 255, 255, 0.16);
+            border-radius: 1.25rem;
             padding: 0.075rem 1.125rem 0.575rem 1.125rem;
-            margin-bottom: 0.9375rem;
+            margin-bottom: 0.1rem;
             cursor: pointer;
             transition: all 0.2s ease;
             border-left: 0.3125rem solid;
         }
 
         .mode-item:hover {
-            background: rgba(255, 255, 255, 0.15);
+            background: rgba(255, 255, 255, 0.35);
             transform: translateX(0.3125rem);
         }
 
         .mode-name {
-            font-size: 3rem;
+            font-size: 4rem;
             font-weight: bold;
         }
 
@@ -184,10 +185,10 @@
         .selected-mode {
             background: rgba(255, 215, 0, 0.2);
             border: 0.125rem solid #ffd700;
-            padding: 1.875rem;
-            border-radius: 0.9375rem;
+            padding: 0.875rem;
+            border-radius: 2.9375rem;
             text-align: center;
-            margin-top: 1.5625rem;
+            margin-top: 0.5625rem;
             display: none;
         }
 
@@ -242,11 +243,10 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 0.5rem;
         }
 
         .path-step {
-            font-size: 3rem;
+            font-size: 6rem;
             font-weight: bold;
             padding: 0.5rem 1rem;
             background: rgba(255, 255, 255, 0.1);
@@ -262,6 +262,13 @@
         }
 
         @media (max-width: 480px) {
+            .mode-name{
+                font-size: 3rem;
+            }
+            .path-step {
+                font-size: 4rem;
+            }
+
             body {
                 padding: 0.5rem;
             }
@@ -292,7 +299,7 @@
             }
 
             .selected-mode {
-                padding: 1.5625rem 1.25rem;
+                padding: 0.5625rem 1.25rem;
             }
 
             .selected-mode h3 {
@@ -307,9 +314,6 @@
                 font-size: 2.8rem;
             }
 
-            .path-step {
-                font-size: 2.5rem;
-            }
 
             .path-arrow {
                 font-size: 2.5rem;
@@ -346,7 +350,7 @@
     <div class="mode-list" id="modeList"></div>
 
     <div class="selected-mode" id="selectedMode">
-        <h3>您选择的模式是：</h3>
+        <h3>模式确认为：</h3>
         <div class="final-modes" id="finalModes"></div>
     </div>
 
@@ -584,7 +588,7 @@
     // 更新面包屑导航
     function updateBreadcrumb() {
         if (currentPath.length === 0) {
-            breadcrumb.innerHTML = '请选择卡牌类型';
+            breadcrumb.innerHTML = '请选择第一张卡';
             return;
         }
 
@@ -592,7 +596,7 @@
 
         currentPath.forEach((segment, index) => {
             if (index === 0) {
-                breadcrumbHTML += `<span>卡牌类型: ${segment}</span>`;
+                breadcrumbHTML += `<span>初始模式: ${segment}</span>`;
             } else {
                 breadcrumbHTML += `<span class="separator">/</span><span>第${index}步: ${segment}</span>`;
             }
