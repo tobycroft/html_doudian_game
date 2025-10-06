@@ -16,6 +16,10 @@
             position: absolute;
             width: 100%;
             height: 100%;
+            cursor: grab;
+        }
+        #container:active {
+            cursor: grabbing;
         }
         #info {
             position: absolute;
@@ -48,13 +52,6 @@
         button:hover {
             background: #45a049;
         }
-        .blind-box {
-            cursor: pointer;
-            transition: transform 0.3s;
-        }
-        .blind-box:hover {
-            transform: scale(1.1);
-        }
         #instructions {
             position: absolute;
             bottom: 20px;
@@ -65,11 +62,21 @@
             max-width: 300px;
             font-size: 0.9em;
         }
+        .selected-info {
+            position: absolute;
+            top: 60px;
+            width: 100%;
+            text-align: center;
+            z-index: 100;
+            font-size: 1.2em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
     </style>
 </head>
 <body>
 <div id="container"></div>
 <div id="info">3D盲盒货架展示 - 5层 × 5个盲盒</div>
+<div id="selectedInfo" class="selected-info"></div>
 <div id="controls">
     <button id="rotateToggle">旋转货架</button>
     <button id="resetView">重置视图</button>
@@ -78,7 +85,8 @@
 </div>
 <div id="instructions">
     <p>操作指南:</p>
-    <p>• 鼠标拖动: 旋转视角</p>
+    <p>• 鼠标左键拖动: 移动货架</p>
+    <p>• 鼠标右键拖动: 旋转视角</p>
     <p>• 鼠标滚轮: 缩放</p>
     <p>• 鼠标悬停: 盲盒放大</p>
     <p>• 鼠标点击: 锁定盲盒选中状态</p>
@@ -93,7 +101,7 @@
 
     // 初始化相机
     const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-    camera.position.set(10, 8, 10);
+    camera.position.set(0, 0, 15);
 
     // 初始化渲染器
     const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -105,6 +113,16 @@
     const controls = new THREE.OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.05;
+    controls.enablePan = true; // 允许平移
+    controls.enableRotate = true; // 允许旋转
+    controls.enableZoom = true; // 允许缩放
+
+    // 修改鼠标控制：左键拖动，右键旋转
+    controls.mouseButtons = {
+        LEFT: THREE.MOUSE.PAN, // 左键平移
+        MIDDLE: THREE.MOUSE.DOLLY, // 中键缩放
+        RIGHT: THREE.MOUSE.ROTATE // 右键旋转
+    };
 
     // 添加光源
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
@@ -247,12 +265,19 @@
         const patternMaterial = new THREE.MeshBasicMaterial({
             color: 0xffffff,
             transparent: true,
-            opacity: 0.8
+            opacity: 0.8,
+            side: THREE.DoubleSide
         });
 
         const pattern = new THREE.Mesh(patternGeometry, patternMaterial);
         pattern.position.set(0, 0, box.geometry.parameters.height/2 + 0.01);
+        pattern.rotation.x = Math.PI; // 确保图案正确显示
         box.add(pattern);
+
+        // 在盒子另一侧也添加图案
+        const patternBack = new THREE.Mesh(patternGeometry, patternMaterial);
+        patternBack.position.set(0, 0, -box.geometry.parameters.height/2 - 0.01);
+        box.add(patternBack);
     }
 
     // 创建货架
@@ -287,7 +312,9 @@
 
     document.getElementById('resetView').addEventListener('click', () => {
         controls.reset();
-        camera.position.set(10, 8, 10);
+        camera.position.set(0, 0, 15);
+        shelf.position.set(0, 0, 0);
+        shelf.rotation.set(0, 0, 0);
     });
 
     document.getElementById('randomizeColors').addEventListener('click', () => {
@@ -390,6 +417,7 @@
                         blindBox.userData.originalScale
                     );
                     selectedBox = null;
+                    document.getElementById('selectedInfo').textContent = '';
                 } else {
                     // 恢复之前选中的盲盒
                     if (selectedBox) {
@@ -405,12 +433,17 @@
                     selectedBox = blindBox;
 
                     // 更新信息显示
-                    document.getElementById('info').textContent =
+                    document.getElementById('selectedInfo').textContent =
                         `选中盲盒: 第${blindBox.userData.level + 1}层 第${blindBox.userData.position + 1}个`;
                 }
 
                 // 清除悬停状态
                 if (hoveredBox === blindBox) {
+                    hoveredBox.scale.set(
+                        hoveredBox.userData.originalScale,
+                        hoveredBox.userData.originalScale,
+                        hoveredBox.userData.originalScale
+                    );
                     hoveredBox = null;
                 }
                 break;
