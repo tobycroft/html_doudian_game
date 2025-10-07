@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8" />
+    <title>盲盒货架 Demo</title>
+    <style>
+        body { margin: 0; overflow: hidden; background: #111; }
+        canvas { display: block; }
+        #infoBox {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255,255,255,0.9);
+            padding: 20px; border-radius: 10px;
+            display: none; max-width: 400px;
+        }
+        #infoBox img { width: 100%; border-radius: 8px; }
+        #infoBox button { margin-top: 10px; }
+    </style>
+</head>
+<body>
+<div id="infoBox">
+    <h2 id="boxTitle"></h2>
+    <img id="boxImg" />
+    <p id="boxContent"></p>
+    <button onclick="closeInfo()">关闭</button>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/three@0.159.0/build/three.min.js"></script>
+
+<script>
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, innerWidth/innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({antialias:true});
+    renderer.setSize(innerWidth, innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    const light = new THREE.DirectionalLight(0xffffff, 1);
+    light.position.set(10, 10, 10);
+    scene.add(light);
+
+    camera.position.set(0, 3, 10);
+
+    const data = {
+        "第一层": {
+            "第一个": {"status":true,"is_show":true,"str":"盒子1","status_str":"可用","title":"标题1","content":"内容1","img":"https://via.placeholder.com/300x200"},
+            "第二个":{"status":false,"is_show":true,"str":"盒子2","status_str":"未开","title":"标题2","content":"内容2","img":"https://via.placeholder.com/300x200"},
+            "第三个":{"status":false,"is_show":false},
+            "第四个":{"status":true,"is_show":true,"str":"盒子4","status_str":"未开","title":"标题4","content":"内容4","img":"https://via.placeholder.com/300x200"},
+            "第五个":{"status":true,"is_show":true,"str":"盒子5","status_str":"未开","title":"标题5","content":"内容5","img":"https://via.placeholder.com/300x200"}
+        }
+    };
+
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2();
+    let boxes = [];
+
+    function createBox(item, x, y, z) {
+        const geom = new THREE.BoxGeometry(1,1,1);
+        const color = item.status ? 0x44aa88 : 0x555555;
+        const mat = new THREE.MeshLambertMaterial({color, transparent:!item.is_show, opacity:item.is_show?1:0.2});
+        const mesh = new THREE.Mesh(geom, mat);
+        mesh.position.set(x,y,z);
+        mesh.userData = item;
+        scene.add(mesh);
+        boxes.push(mesh);
+    }
+
+    function createShelfFromJson(data){
+        const layers = Object.keys(data);
+        layers.forEach((layerName, i)=>{
+            const layer = data[layerName];
+            const cols = Object.keys(layer);
+            cols.forEach((colName, j)=>{
+                const item = layer[colName];
+                const x = (j - cols.length/2) * 1.5;
+                const y = i * 1.5;
+                const z = 0;
+                createBox(item, x, y, z);
+            });
+        });
+    }
+
+    createShelfFromJson(data);
+
+    window.addEventListener('click', (e)=>{
+        mouse.x = (e.clientX / innerWidth) * 2 - 1;
+        mouse.y = -(e.clientY / innerHeight) * 2 + 1;
+        raycaster.setFromCamera(mouse, camera);
+        const intersects = raycaster.intersectObjects(boxes);
+        if(intersects.length > 0){
+            const item = intersects[0].object.userData;
+            if(item && item.is_show){
+                showInfo(item);
+            }
+        }
+    });
+
+    function showInfo(item){
+        document.getElementById('boxTitle').innerText = item.title || '';
+        document.getElementById('boxContent').innerText = item.content || '';
+        document.getElementById('boxImg').src = item.img || '';
+        document.getElementById('infoBox').style.display = 'block';
+    }
+    function closeInfo(){
+        document.getElementById('infoBox').style.display = 'none';
+    }
+
+    function animate(){
+        requestAnimationFrame(animate);
+        renderer.render(scene, camera);
+    }
+    animate();
+</script>
+</body>
+</html>
