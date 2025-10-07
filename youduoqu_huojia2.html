@@ -5,68 +5,109 @@
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>WebGL 盲盒货架 Demo</title>
     <style>
-        body, html { margin:0; height:100%; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial; }
-        #app { width:100%; height:100%; display:flex; background: linear-gradient(#cfeaff, #f7fdfc); }
-        #canvas-wrap { flex:1; position:relative; }
-        #infoPanel {
-            width: 360px;
-            background: rgba(255,255,255,0.95);
-            box-shadow: 0 8px 30px rgba(0,0,0,0.15);
-            padding:16px;
-            overflow:auto;
+        html, body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            overflow: hidden;
+            background: #e0e0e0;
         }
-        h2 { margin:6px 0 14px; font-size:18px; }
-        .detail-img { width:100%; height:200px; object-fit:cover; background:#eee; border-radius:6px; margin-bottom:12px; }
-        .status { font-weight:600; margin-bottom:8px; color:#333; }
-        .closeBtn { display:inline-block; padding:8px 12px; background:#1976d2; color:white; border-radius:6px; cursor:pointer; text-decoration:none; }
-        .meta { font-size:13px; color:#666; margin-bottom:6px; }
-        .slot-legend { font-size:13px; color:#444; margin-bottom:8px; }
-        /* small helper for overlay */
-        #overlayNote { position:absolute; left:12px; top:12px; background:rgba(255,255,255,0.85); padding:8px 10px; border-radius:6px; box-shadow:0 3px 10px rgba(0,0,0,0.08); font-size:13px; }
+
+        canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 1;            /* 确保在底层，但仍可交互 */
+            pointer-events: auto;  /* 保证鼠标事件有效 */
+        }
+    </style>
+
+
+    <style>
+        /*body, html { margin:0; height:100%; overflow:hidden; font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial; background:#cfeaff; }*/
+        #canvas-wrap { width:100%; height:100%; position:relative; }
+        #overlayNote {
+            position:absolute; left:12px; top:12px;
+            background:rgba(255,255,255,0.85);
+            padding:8px 10px;
+            border-radius:6px;
+            box-shadow:0 3px 10px rgba(0,0,0,0.08);
+            font-size:13px;
+        }
+
+        /* 悬浮详情窗 */
+        #detailPopup {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%) scale(0.95);
+            background: rgba(255,255,255,0.97);
+            box-shadow: 0 12px 40px rgba(0,0,0,0.25);
+            border-radius: 12px;
+            width: 360px;
+            max-width: 90%;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.25s ease;
+            z-index: 10;
+            padding: 16px;
+        }
+        #detailPopup.show {
+            opacity: 1;
+            pointer-events: all;
+            transform: translate(-50%, -50%) scal e(1);
+        }
+        #detailPopup img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            background: #eee;
+        }
+        #detailPopup h3 {
+            margin: 6px 0;
+            font-size: 18px;
+            color: #333;
+        }
+        #detailPopup p {
+            margin: 6px 0 12px;
+            font-size: 14px;
+            color: #555;
+            line-height: 1.5;
+        }
+        #closeBtn {
+            display:inline-block;
+            padding:8px 14px;
+            background:#1976d2;
+            color:white;
+            border-radius:6px;
+            cursor:pointer;
+            text-decoration:none;
+        }
     </style>
 </head>
 <body>
-<div id="app">
-    <div id="canvas-wrap">
-        <div id="overlayNote">鼠标右键拖动旋转 · 鼠标滚轮缩放 · 左键点击盒子</div>
-        <canvas id="c"></canvas>
-    </div>
-    <div id="infoPanel">
-        <h2>盲盒详情</h2>
-        <img id="detailImg" class="detail-img" src="" alt="">
-        <div id="detailTitle" class="status">请选择一个盲盒</div>
-        <div id="detailContent" class="meta">点击任意可见盒子以查看内容 / 打开状态会触发盖子动画。</div>
-        <div style="margin-top:12px;">
-            <a id="closeBtn" class="closeBtn" href="javascript:;">关闭并收起</a>
-        </div>
-        <hr style="margin:12px 0;">
-        <div class="slot-legend">说明：</div>
-        <div class="meta">• <strong>status</strong>：true = 已打开（视觉为打开盖子）</div>
-        <div class="meta">• <strong>is_show</strong>：false = 不显示盒子内容（但占位位置保留）</div>
-        <div style="margin-top:12px;">
-            <strong>示例 JSON（可替换）</strong>
-            <pre id="jsonShow" style="white-space:pre-wrap; background:#f5f7fb; padding:8px; border-radius:6px;"></pre>
-        </div>
+<div id="canvas-wrap">
+    <div id="overlayNote">鼠标左键拖动平移 · 滚轮缩放 · 点击盒子查看详情</div>
+    <canvas id="c"></canvas>
+
+    <!-- 悬浮详情框 -->
+    <div id="detailPopup">
+        <img id="detailImg" src="" alt="">
+        <h3 id="detailTitle">标题</h3>
+        <p id="detailContent">内容</p>
+        <a id="closeBtn">关闭</a>
     </div>
 </div>
 
-<!-- three.js 从 CDN 加载 -->
-<script src="https://cdn.jsdelivr.net/npm/three/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three/examples/js/controls/OrbitControls.js"></script>
 
 <script>
-    /*
-      Demo 说明：
-      - 将 JSON 数据放入 `inputJSON` 变量（示例在下方）。
-      - 程序会按层顺序生成货架（每层竖直距离固定、每层最多盒子按该层对象 key 的顺序排列）。
-      - 每个盒子对象支持:
-          status (bool): 是否已打开（打开时会把盖子弹起）
-          is_show (bool): 是否可见（false 则仅占位）
-          str (string): 盒子正面显示的文本
-          status_str, title, content, img: 用于详情面板
-      - 自行调整参数：shelf spacing、box size、层数等
-    */
-
+    /* ---------- three.js 初始化 ---------- */
     const canvas = document.getElementById('c');
     const renderer = new THREE.WebGLRenderer({canvas, antialias:true});
     renderer.setPixelRatio(window.devicePixelRatio);
@@ -74,341 +115,206 @@
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
     const scene = new THREE.Scene();
-    // 明亮室外背景 (渐变)
-    scene.background = new THREE.Color(0xcfeaff);
-
-    // 摄像机
-    const fov = 45;
-    const aspect = 2;  // will update on resize
-    const near = 0.1;
-    const far = 2000;
-    const camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
+    const camera = new THREE.PerspectiveCamera(45, 2, 0.1, 2000);
     camera.position.set(0, 8, 18);
 
-    // 控制器
     const controls = new THREE.OrbitControls(camera, canvas);
-    controls.target.set(0,3,0);
+    controls.enableRotate = false; // 禁止旋转
+    controls.enablePan = true;
+    controls.screenSpacePanning = true;
+    controls.enableZoom = true;
+    controls.panSpeed = 0.5;
+
+    controls.mouseButtons = {
+        LEFT: THREE.MOUSE.PAN,      // 左键平移
+        MIDDLE: THREE.MOUSE.DOLLY,  // 中键缩放
+        RIGHT: null                  // 右键无动作
+    };
     controls.update();
 
-    // 地面与环境光
+
+
     const hemi = new THREE.HemisphereLight(0xffffff, 0xaaaaaa, 0.9);
     scene.add(hemi);
-
     const sun = new THREE.DirectionalLight(0xffffff, 1.0);
     sun.position.set(10, 20, 10);
     sun.castShadow = true;
-    sun.shadow.camera.left = -30;
-    sun.shadow.camera.right = 30;
-    sun.shadow.camera.top = 30;
-    sun.shadow.camera.bottom = -30;
-    sun.shadow.mapSize.width = 2048;
-    sun.shadow.mapSize.height = 2048;
     scene.add(sun);
 
-    const groundMat = new THREE.MeshStandardMaterial({color:0xf3f6f8, roughness:1.0, metalness:0.0});
-    const ground = new THREE.Mesh(new THREE.PlaneGeometry(200,200), groundMat);
+    const textureLoader = new THREE.TextureLoader();
+    scene.background = textureLoader.load('https://threejs.org/examples/textures/skybox/skyboxsun25degtest.png');
+    const ground = new THREE.Mesh(new THREE.PlaneGeometry(100,100), new THREE.MeshStandardMaterial({color:0x88cc88, roughness:1}));
     ground.rotation.x = -Math.PI/2;
-    ground.position.y = -0.01;
     ground.receiveShadow = true;
     scene.add(ground);
 
-    // 货架参数（可以调整）
+    /* ---------- 构建货架与盲盒 ---------- */
     const shelf = {
-        shelfWidth: 14,
-        shelfDepth: 4,
-        shelfThickness: 0.25,
-        shelfSpacing: 2.5,   // 层间距
-        boxSize: { x: 2.2, y: 1.8, z: 2.0 }, // 盒子外形（宽 高 深）
-        boxPaddingX: 0.4,
-        boxPaddingY: 0.2
+        shelfWidth: 14, shelfDepth: 4, shelfThickness: 0.25,
+        shelfSpacing: 2.5, boxSize: {x:2.2, y:1.8, z:2.0}, boxPaddingX:0.4
     };
-
-    // 创建货架实体（五层示例, 但随后会按 JSON 动态生成层数及位置）
-    function buildShelf(levelCount) {
-        // 侧柱
+    function buildShelf(levelCount){
         const poleW = 0.35;
         const poleGeo = new THREE.BoxGeometry(poleW, levelCount * shelf.shelfSpacing + 1.0, poleW);
         const poleMat = new THREE.MeshStandardMaterial({color:0x6a4f2a});
-        const leftPole = new THREE.Mesh(poleGeo, poleMat);
-        const rightPole = new THREE.Mesh(poleGeo, poleMat);
-        leftPole.position.set(-shelf.shelfWidth/2 - poleW/2, (levelCount-1)*shelf.shelfSpacing/2 + 0.7, 0);
-        rightPole.position.set(shelf.shelfWidth/2 + poleW/2, (levelCount-1)*shelf.shelfSpacing/2 + 0.7, 0);
-        leftPole.castShadow = rightPole.castShadow = true;
-        scene.add(leftPole, rightPole);
-
-        // 层板
-        for (let i=0;i<levelCount;i++) {
+        const left = new THREE.Mesh(poleGeo,poleMat), right = new THREE.Mesh(poleGeo,poleMat);
+        left.position.set(-shelf.shelfWidth/2 - poleW/2, (levelCount-1)*shelf.shelfSpacing/2 + 0.7, 0);
+        right.position.set(shelf.shelfWidth/2 + poleW/2, (levelCount-1)*shelf.shelfSpacing/2 + 0.7, 0);
+        scene.add(left,right);
+        for(let i=0;i<levelCount;i++){
             const sy = i * shelf.shelfSpacing + 0.5;
-            const plankGeo = new THREE.BoxGeometry(shelf.shelfWidth, shelf.shelfThickness, shelf.shelfDepth);
-            const plankMat = new THREE.MeshStandardMaterial({color:0x8d6e4f});
-            const plank = new THREE.Mesh(plankGeo, plankMat);
+            const plank = new THREE.Mesh(new THREE.BoxGeometry(shelf.shelfWidth, shelf.shelfThickness, shelf.shelfDepth),
+                new THREE.MeshStandardMaterial({color:0x8d6e4f}));
             plank.position.set(0, sy, 0);
-            plank.receiveShadow = true;
-            plank.castShadow = true;
             scene.add(plank);
         }
     }
 
-    /* ---------- JSON 示例（你可以替换此处为你后端传来的 JSON） ---------- */
     const inputJSON = {
         "第一层":{
-            "第一个":{"status":true,"is_show":true,"str":"盒子名称1","status_str":"未打开可使用","title":"二级页面标题1","content":"这是盒子1的内容描述","img":"https://picsum.photos/600/400?random=1"},
-            "第二个":{"status":false,"is_show":true,"str":"盒子名称2","status_str":"未打开可使用","title":"二级页面标题2","content":"这是盒子2的内容描述","img":"https://picsum.photos/600/400?random=2"},
-            "第三个":{"status":false,"is_show":false,"str":"盒子名称占位3","status_str":"占位","title":"二级页面标题3","content":"隐藏占位示例","img":""},
-            "第四个":{"status":true,"is_show":true,"str":"盒子名称4","status_str":"已打开","title":"标题4","content":"内容4","img":"https://picsum.photos/600/400?random=4"},
-            "第五个":{"status":false,"is_show":true,"str":"盒子名称5","status_str":"未打开","title":"标题5","content":"内容5","img":"https://picsum.photos/600/400?random=5"}
+            "第一个":{"status":false,"is_show":true,"str":"盒子名称1","title":"标题1","content":"盒子1内容","img":"https://picsum.photos/600/400?random=1"},
+            "第二个":{"status":true,"is_show":true,"str":"盒子名称2","title":"标题2","content":"盒子2内容","img":"https://picsum.photos/600/400?random=2"}
         },
         "第二层":{
-            "第一个":{"status":true,"is_show":true,"str":"盒子名称6","status_str":"未打开可使用","title":"二级页面标题6","content":"这是盒子6的内容描述","img":"https://picsum.photos/600/400?random=6"},
-            "第二个":{"status":false,"is_show":true,"str":"盒子名称7","status_str":"未打开可使用","title":"二级页面标题7","content":"这是盒子7的内容描述","img":"https://picsum.photos/600/400?random=7"}
-        },
-        "第三层":{
-            "第一个":{"status":false,"is_show":true,"str":"盒子名称8","status_str":"未打开","title":"第八","content":"内容8","img":"https://picsum.photos/600/400?random=8"}
+            "第一个":{"status":false,"is_show":true,"str":"盒子名称3","title":"标题3","content":"盒子3内容","img":"https://picsum.photos/600/400?random=3"}
         }
     };
-
-    /* 在右侧面板显示 JSON 可视化 */
-    document.getElementById('jsonShow').innerText = JSON.stringify(inputJSON, null, 2);
-
-    /* ---------- 构建货架与盒子 ---------- */
     const layers = Object.keys(inputJSON);
-    const layerCount = layers.length;
-    buildShelf(layerCount);
+    buildShelf(layers.length);
 
-    // group for boxes (便于管理/点击)
-    const boxesGroup = new THREE.Group();
-    scene.add(boxesGroup);
+    const boxesGroup = new THREE.Group(); scene.add(boxesGroup);
 
-    // helper: create canvas texture for front/back with text
-    function makeTextTexture(text, width=512, height=512, opts={}) {
+    function makeTextTexture(text,width=512,height=512){
         const canvas = document.createElement('canvas');
-        canvas.width = width; canvas.height = height;
+        canvas.width=width; canvas.height=height;
         const ctx = canvas.getContext('2d');
-        ctx.fillStyle = opts.bg || '#ffffff';
-        ctx.fillRect(0,0,width,height);
-        ctx.font = (opts.fontSize || 48) + 'px sans-serif';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillStyle = opts.color || '#111';
-        const lines = (text || '').split('\n');
-        const lineH = (opts.fontSize || 48) * 1.05;
-        const startY = height/2 - (lines.length-1)*lineH/2;
-        for (let i=0;i<lines.length;i++){
-            ctx.fillText(lines[i], width/2, startY + i*lineH);
-        }
-        const tex = new THREE.CanvasTexture(canvas);
-        tex.needsUpdate = true;
-        return tex;
+        ctx.fillStyle="#fff"; ctx.fillRect(0,0,width,height);
+        ctx.fillStyle="#111"; ctx.font="48px sans-serif";
+        ctx.textAlign="center"; ctx.textBaseline="middle";
+        ctx.fillText(text, width/2, height/2);
+        return new THREE.CanvasTexture(canvas);
     }
 
-    // build boxes per layer
     const boxSize = shelf.boxSize;
-    layers.forEach((layerKey, layerIndex) => {
+    layers.forEach((layerKey,layerIndex)=>{
         const layerObj = inputJSON[layerKey];
         const slotKeys = Object.keys(layerObj);
         const count = slotKeys.length;
-        const totalWidth = count * boxSize.x + (count-1) * shelf.boxPaddingX;
-        // start X so that boxes centered on shelf
+        const totalWidth = count * boxSize.x + (count-1)*shelf.boxPaddingX;
         const startX = - totalWidth/2 + boxSize.x/2;
-        const y = layerIndex * shelf.shelfSpacing + 0.5 + (shelf.shelfThickness/2) + (boxSize.y/2);
-
-        slotKeys.forEach((slotKey, i) => {
-            const data = layerObj[slotKey];
-            const x = startX + i * (boxSize.x + shelf.boxPaddingX);
-            const z = 0; // centered in depth
-
-            // base group for the slot (keeps position even if hidden)
+        const y = layerIndex*shelf.shelfSpacing + 0.5 + shelf.shelfThickness/2 + boxSize.y/2;
+        slotKeys.forEach((slotKey,i)=>{
+            const d = layerObj[slotKey];
+            const x = startX + i*(boxSize.x + shelf.boxPaddingX);
             const slot = new THREE.Group();
-            slot.position.set(x, y, z);
-            slot.userData = { layerKey, slotKey, data };
-
-            // even when is_show === false we must keep the space.
-            // if is_show false -> render a placeholder outline (wireframe) or fully invisible. We'll use subtle wireframe.
-            if (!data.is_show) {
-                const placeholderGeo = new THREE.BoxGeometry(boxSize.x, boxSize.y, boxSize.z);
-                const wire = new THREE.LineSegments(
-                    new THREE.EdgesGeometry(placeholderGeo),
-                    new THREE.LineBasicMaterial({ color:0x999999, linewidth:1, opacity:0.18, transparent:true })
-                );
-                wire.rotation.y = 0;
-                slot.add(wire);
-                // do not add interactive box meshes (so clicks pass through)
+            slot.position.set(x,y,0);
+            if(!d.is_show){
                 boxesGroup.add(slot);
                 return;
             }
-
-            // main box body
-            const bodyGeo = new THREE.BoxGeometry(boxSize.x, boxSize.y*0.85, boxSize.z);
-            const bodyMat = new THREE.MeshStandardMaterial({ color: data.status ? 0xfff1c2 : 0xffffff, roughness:0.6, metalness:0.1 });
-            const bodyMesh = new THREE.Mesh(bodyGeo, bodyMat);
-            bodyMesh.position.y = -(boxSize.y*0.15)/2; // leave room for lid
-            bodyMesh.castShadow = true;
-            bodyMesh.receiveShadow = true;
-
-            // lid (单独可旋转的部分)
+            const body = new THREE.Mesh(
+                new THREE.BoxGeometry(boxSize.x, boxSize.y*0.85, boxSize.z),
+                new THREE.MeshStandardMaterial({color:d.status?0xfff1c2:0xffffff})
+            );
+            body.castShadow=true; body.receiveShadow=true;
             const lidGeo = new THREE.BoxGeometry(boxSize.x*1.02, boxSize.y*0.35, boxSize.z);
-            const lidMat = new THREE.MeshStandardMaterial({ color: data.status ? 0xffe08a : 0xececec, roughness:0.5 });
-            const lidMesh = new THREE.Mesh(lidGeo, lidMat);
-            // 将 rotation pivot 放在后边缘：把 lidMesh 放入一个 pivotGroup，pivotGroup 相对于盒体位置上移
+            const lidMat = new THREE.MeshStandardMaterial({color:d.status?0xffe08a:0xececec});
+            const lidMesh = new THREE.Mesh(lidGeo,lidMat);
             const lidPivot = new THREE.Group();
             lidMesh.position.set(0, boxSize.y*0.35/2 - (boxSize.y*0.15)/2, -boxSize.z/2 + lidGeo.parameters.depth/2);
-            lidMesh.castShadow = true;
             lidPivot.add(lidMesh);
+            if(d.status) lidPivot.rotation.x = -Math.PI/2.6;
 
-            // 给盒子正反面添加文字纹理
-            const frontText = data.str || '';
-            const frontTex = makeTextTexture(frontText, 512, 512, { fontSize: 46, color: '#0b2b2f', bg:'#ffffff' });
-            // create materials for each face: [right, left, top, bottom, front, back]
-            const mats = [
-                new THREE.MeshStandardMaterial({color:0xffffff}), // right
-                new THREE.MeshStandardMaterial({color:0xffffff}), // left
-                new THREE.MeshStandardMaterial({color:0xffffff}), // top
-                new THREE.MeshStandardMaterial({color:0xffffff}), // bottom
-                new THREE.MeshStandardMaterial({map: frontTex}), // front
-                new THREE.MeshStandardMaterial({map: frontTex})  // back (we reuse; you can generate different text)
-            ];
-            const faceMesh = new THREE.Mesh(new THREE.BoxGeometry(boxSize.x*0.98, boxSize.y*0.85, boxSize.z*0.98), mats);
-            faceMesh.position.copy(bodyMesh.position);
+            const frontTex = makeTextTexture(d.str);
+            const faceMesh = new THREE.Mesh(
+                new THREE.BoxGeometry(boxSize.x*0.98, boxSize.y*0.85, boxSize.z*0.98),
+                new THREE.MeshStandardMaterial({map:frontTex})
+            );
+            faceMesh.position.copy(body.position);
 
-            // assembly
-            slot.add(bodyMesh);
-            slot.add(lidPivot);
-            slot.add(faceMesh);
-
-            // store references for click/animation
-            slot.userData.parts = { lidPivot, lidMesh, bodyMesh, faceMesh, data };
-
-            // if status true at load, set lid opened angle
-            if (data.status) {
-                lidPivot.rotation.x = -Math.PI/2.6; // 打开角度
-            }
-
+            slot.add(body,lidPivot,faceMesh);
+            slot.userData = {data:d, parts:{lidPivot,body}};
             boxesGroup.add(slot);
         });
     });
 
-    /* ---------- 点击交互（射线） ---------- */
-    const raycaster = new THREE.Raycaster();
-    const pointer = new THREE.Vector2();
-    let lastIntersectedSlot = null;
-    const clickState = { animating:false };
-
-    function onPointerDown(event) {
-        // 计算 pointer（左键点击）
+    /* ---------- 点击交互 ---------- */
+    const raycaster = new THREE.Raycaster(), pointer = new THREE.Vector2();
+    const clickState={animating:false};
+    function onPointerDown(event){
         const rect = canvas.getBoundingClientRect();
         pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
         pointer.y = - ((event.clientY - rect.top) / rect.height) * 2 + 1;
-
-        raycaster.setFromCamera(pointer, camera);
-        // 只检测 boxesGroup 的可交互子项
-        const intersects = raycaster.intersectObjects(boxesGroup.children, true);
-
-        // 找到第一个有 userData.data && is_show true 的 slot（层次中查找）
-        for (const inter of intersects) {
-            // 向上查找包含槽位 userData 的父节点
+        raycaster.setFromCamera(pointer,camera);
+        const intersects = raycaster.intersectObjects(boxesGroup.children,true);
+        for(const inter of intersects){
             let obj = inter.object;
-            while (obj && !obj.userData.data) {
-                obj = obj.parent;
-            }
-            if (obj && obj.userData && obj.userData.data && obj.userData.data.is_show) {
-                handleSlotClick(obj);
-                break;
-            }
+            while(obj && !obj.userData.data) obj = obj.parent;
+            if(obj && obj.userData.data){ handleSlotClick(obj); break; }
         }
     }
 
-    function handleSlotClick(slot) {
-        const u = slot.userData;
-        const d = u.data;
-        // if currently animating, ignore clicks to avoid冲突
-        if (clickState.animating) return;
+    function handleSlotClick(slot){
+        const d = slot.userData.data;
+        if(clickState.animating) return;
         clickState.animating = true;
-
-        // animate lid: if closed -> open, if open -> close (并展示右侧详情面板)
         const parts = slot.userData.parts;
-        const targetOpen = !d.status; // toggle
-        const from = { r: parts.lidPivot.rotation.x };
-        const to = { r: targetOpen ? -Math.PI/2.6 : 0 };
-        const duration = 450; // ms
-
+        const targetOpen = !d.status;
+        const from = {r: parts.lidPivot.rotation.x};
+        const to = {r: targetOpen? -Math.PI/2.6 : 0};
         const start = performance.now();
-        function step(t) {
-            const p = Math.min(1, (t - start) / duration);
-            const ease = p<0.5 ? 2*p*p : -1 + (4-2*p)*p; // simple ease
-            parts.lidPivot.rotation.x = from.r + (to.r - from.r) * ease;
-            if (p < 1) {
-                requestAnimationFrame(step);
-            } else {
-                // 动画结束，更新状态
+        const dur = 400;
+        function step(t){
+            const p = Math.min(1, (t-start)/dur);
+            const ease = p<0.5 ? 2*p*p : -1 + (4-2*p)*p;
+            parts.lidPivot.rotation.x = from.r + (to.r - from.r)*ease;
+            if(p<1) requestAnimationFrame(step);
+            else {
                 d.status = targetOpen;
-                // 改变 body 材质颜色以表明已打开
-                if (d.status) {
-                    parts.bodyMesh.material.color.set(0xfff1c2);
-                } else {
-                    parts.bodyMesh.material.color.set(0xffffff);
-                }
-                // 显示右侧详情（如果打开）
-                if (d.status) showDetail(d);
-                clickState.animating = false;
+                parts.body.material.color.set(targetOpen?0xfff1c2:0xffffff);
+                if(targetOpen) showDetail(d);
+                clickState.animating=false;
             }
         }
         requestAnimationFrame(step);
     }
 
-    /* 详情面板逻辑 */
-    const detailImg = document.getElementById('detailImg');
-    const detailTitle = document.getElementById('detailTitle');
-    const detailContent = document.getElementById('detailContent');
+    /* ---------- 悬浮窗逻辑 ---------- */
+    const popup = document.getElementById('detailPopup');
+    const img = document.getElementById('detailImg');
+    const title = document.getElementById('detailTitle');
+    const content = document.getElementById('detailContent');
     const closeBtn = document.getElementById('closeBtn');
 
-    function showDetail(data) {
-        detailImg.src = data.img || '';
-        detailTitle.innerText = data.title || data.str || '未命名盲盒';
-        detailContent.innerText = data.content || data.status_str || '';
+    function showDetail(d){
+        img.src = d.img || '';
+        title.textContent = d.title || d.str || '未命名盲盒';
+        content.textContent = d.content || '';
+        popup.classList.add('show');
     }
-
-    closeBtn.addEventListener('click', () => {
-        detailImg.src = '';
-        detailTitle.innerText = '请选择一个盲盒';
-        detailContent.innerText = '点击任意可见盒子以查看内容 / 打开状态会触发盖子动画。';
+    closeBtn.onclick = ()=> popup.classList.remove('show');
+    window.addEventListener('click', (e)=>{
+        if(e.target === popup) popup.classList.remove('show');
     });
 
-    /* ---------- 渲染循环 & 自适应 ---------- */
-    function resizeRendererToDisplaySize() {
-        const width = canvas.clientWidth;
-        const height = canvas.clientHeight;
-        const needResize = canvas.width !== width * devicePixelRatio || canvas.height !== height * devicePixelRatio;
-        if (needResize) {
-            renderer.setSize(width, height, false);
-            camera.aspect = width / height;
+    /* ---------- 渲染循环 ---------- */
+    function resizeRendererToDisplaySize(){
+        const w = canvas.clientWidth, h = canvas.clientHeight;
+        if(canvas.width !== w*devicePixelRatio || canvas.height !== h*devicePixelRatio){
+            renderer.setSize(w,h,false);
+            camera.aspect = w/h;
             camera.updateProjectionMatrix();
         }
-        return needResize;
     }
-
-    function render(time) {
-        time *= 0.001;
+    function render(){
         resizeRendererToDisplaySize();
-        renderer.render(scene, camera);
+        renderer.render(scene,camera);
         requestAnimationFrame(render);
     }
-    requestAnimationFrame(render);
+    render();
 
-    /* 事件 */
     window.addEventListener('pointerdown', onPointerDown);
-    window.addEventListener('resize', () => {
-        const wrap = document.getElementById('canvas-wrap');
-        const rect = wrap.getBoundingClientRect();
-        // update renderer size to fill container
-        renderer.setSize(rect.width, rect.height, false);
-    });
-    /* 初始化 canvas 大小 */
-    (function initCanvasSize(){
-        const wrap = document.getElementById('canvas-wrap');
-        const rect = wrap.getBoundingClientRect();
-        renderer.setSize(rect.width, rect.height, false);
-    })();
-
+    window.addEventListener('resize', ()=>renderer.setSize(canvas.clientWidth, canvas.clientHeight, false));
 </script>
 </body>
 </html>
