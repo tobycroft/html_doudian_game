@@ -151,7 +151,9 @@
     /* ---------- 构建货架与盲盒 ---------- */
     const shelf = {
         shelfWidth: 14, shelfDepth: 4, shelfThickness: 0.25,
-        shelfSpacing: 2.5, boxSize: {x:2.2, y:1.8, z:2.0}, boxPaddingX:0.4
+        shelfSpacing: 5.0, // 原来的 2.5 * 2，提高一倍
+        boxSize: {x:2.2, y:1.8, z:2.0},
+        boxPaddingX:0.4
     };
     function buildShelf(levelCount){
         const poleW = 0.35;
@@ -196,44 +198,64 @@
     }
 
     const boxSize = shelf.boxSize;
-    layers.forEach((layerKey,layerIndex)=>{
+    layers.forEach((layerKey, layerIndex) => {
         const layerObj = inputJSON[layerKey];
         const slotKeys = Object.keys(layerObj);
         const count = slotKeys.length;
-        const totalWidth = count * boxSize.x + (count-1)*shelf.boxPaddingX;
-        const startX = - totalWidth/2 + boxSize.x/2;
-        const y = layerIndex*shelf.shelfSpacing + 0.5 + shelf.shelfThickness/2 + boxSize.y/2;
-        slotKeys.forEach((slotKey,i)=>{
+        const totalWidth = count * boxSize.x + (count - 1) * shelf.boxPaddingX;
+        const startX = - totalWidth / 2 + boxSize.x / 2;
+        const y = layerIndex * shelf.shelfSpacing + 0.5 + shelf.shelfThickness / 2 + boxSize.y / 2;
+
+        slotKeys.forEach((slotKey, i) => {
             const d = layerObj[slotKey];
-            const x = startX + i*(boxSize.x + shelf.boxPaddingX);
+            const x = startX + i * (boxSize.x + shelf.boxPaddingX);
             const slot = new THREE.Group();
-            slot.position.set(x,y,0);
-            if(!d.is_show){
+            slot.position.set(x, y, 0);
+
+            if (!d.is_show) {
                 boxesGroup.add(slot);
                 return;
             }
-            const body = new THREE.Mesh(
-                new THREE.BoxGeometry(boxSize.x, boxSize.y*0.85, boxSize.z),
-                new THREE.MeshStandardMaterial({color:d.status?0xfff1c2:0xffffff})
-            );
-            body.castShadow=true; body.receiveShadow=true;
-            const lidGeo = new THREE.BoxGeometry(boxSize.x*1.02, boxSize.y*0.35, boxSize.z);
-            const lidMat = new THREE.MeshStandardMaterial({color:d.status?0xffe08a:0xececec});
-            const lidMesh = new THREE.Mesh(lidGeo,lidMat);
-            const lidPivot = new THREE.Group();
-            lidMesh.position.set(0, boxSize.y*0.35/2 - (boxSize.y*0.15)/2, -boxSize.z/2 + lidGeo.parameters.depth/2);
-            lidPivot.add(lidMesh);
-            if(d.status) lidPivot.rotation.x = -Math.PI/2.6;
 
+            // ------------------ 盒子主体 ------------------
+            const body = new THREE.Mesh(
+                new THREE.BoxGeometry(boxSize.x, boxSize.y, boxSize.z),
+                new THREE.MeshStandardMaterial({ color: d.status ? 0xfff1c2 : 0xffffff })
+            );
+            body.castShadow = true;
+            body.receiveShadow = true;
+            slot.add(body);
+
+            // ------------------ 盒子盖子 ------------------
+            const lidGeo = new THREE.BoxGeometry(boxSize.x * 1.02, boxSize.y * 0.35, boxSize.z);
+            const lidMat = new THREE.MeshStandardMaterial({ color: d.status ? 0xffe08a : 0xececec });
+            const lidMesh = new THREE.Mesh(lidGeo, lidMat);
+            lidMesh.castShadow = true;
+
+            const lidPivot = new THREE.Group();
+
+            // 设置 pivot 在盒子顶部后边缘
+            lidPivot.position.set(0, boxSize.y / 2, -boxSize.z / 2);
+
+            // lidMesh 相对于 pivot 向前偏移（这样旋转就像掀盖子）
+            lidMesh.position.set(0, -lidGeo.parameters.height / 2, lidGeo.parameters.depth / 2);
+            lidPivot.add(lidMesh);
+
+            // 初始打开状态
+            if (d.status) lidPivot.rotation.x = -Math.PI / 2.6;
+
+            // ------------------ 正面文字 ------------------
             const frontTex = makeTextTexture(d.str);
             const faceMesh = new THREE.Mesh(
-                new THREE.BoxGeometry(boxSize.x*0.98, boxSize.y*0.85, boxSize.z*0.98),
-                new THREE.MeshStandardMaterial({map:frontTex})
+                new THREE.BoxGeometry(boxSize.x * 0.98, boxSize.y * 0.85, 0.05), // 厚度很小，贴前面
+                new THREE.MeshStandardMaterial({ map: frontTex, transparent: true })
             );
-            faceMesh.position.copy(body.position);
+            // 放在盒子正面
+            faceMesh.position.set(0, 0, boxSize.z / 2 + 0.025);
 
-            slot.add(body,lidPivot,faceMesh);
-            slot.userData = {data:d, parts:{lidPivot,body}};
+            // ------------------ 添加到 slot ------------------
+            slot.add(lidPivot, faceMesh);
+            slot.userData = { data: d, parts: { lidPivot, body } };
             boxesGroup.add(slot);
         });
     });
@@ -253,8 +275,39 @@
             if(obj && obj.userData.data){ handleSlotClick(obj); break; }
         }
     }
+    function moveCameraToSlot(slot){
+        const targetPos = slot.position.clone();
+        const camPos = camera.position.clone();
+        const startTarget = controls.target.clone();
+
+        // 摄像机距离盒子的偏移，可以调整
+        const offset = new THREE.Vector3(0, 2, 6); // 高2，前6
+        const targetCamPos = targetPos.clone().add(offset);
+
+        const duration = 600; // ms
+        const startTime = performance.now();
+
+        function step(t){
+            const p = Math.min(1, (t - startTime)/duration);
+            const ease = p<0.5 ? 2*p*p : -1 + (4-2*p)*p; // 简单 ease
+
+            // 插值目标点
+            controls.target.lerpVectors(startTarget, targetPos, ease);
+            // 插值摄像机位置
+            camera.position.lerpVectors(camPos, targetCamPos, ease);
+
+            controls.update();
+
+            if(p < 1) requestAnimationFrame(step);
+        }
+
+        requestAnimationFrame(step);
+    }
+
 
     function handleSlotClick(slot){
+
+
         const d = slot.userData.data;
         if(clickState.animating) return;
         clickState.animating = true;
@@ -275,6 +328,10 @@
                 if(targetOpen) showDetail(d);
                 clickState.animating=false;
             }
+        }
+        if(targetOpen){
+            moveCameraToSlot(slot);
+            showDetail(d);
         }
         requestAnimationFrame(step);
     }

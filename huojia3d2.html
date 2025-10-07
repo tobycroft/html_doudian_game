@@ -1,0 +1,436 @@
+<!doctype html>
+<html lang="zh">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>WebGL 盲盒货架 Demo</title>
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            overflow: hidden;
+            background: #e0e0e0;
+        }
+
+        canvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        #canvas-wrap {
+            width:100%;
+            height:100%;
+            position:relative;
+        }
+
+        #overlayNote {
+            position:absolute;
+            left:12px;
+            top:12px;
+            background:rgba(255,255,255,0.85);
+            padding:8px 10px;
+            border-radius:6px;
+            box-shadow:0 3px 10px rgba(0,0,0,0.08);
+            font-size:13px;
+            font-family: sans-serif;
+        }
+
+        /* 悬浮详情窗 */
+        #detailPopup {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%) scale(0.95);
+            background: rgba(255,255,255,0.97);
+            box-shadow: 0 12px 40px rgba(0,0,0,0.25);
+            border-radius: 12px;
+            width: 360px;
+            max-width: 90%;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.25s ease;
+            z-index: 10;
+            padding: 16px;
+            font-family: sans-serif;
+        }
+        #detailPopup.show {
+            opacity: 1;
+            pointer-events: all;
+            transform: translate(-50%, -50%) scale(1);
+        }
+        #detailPopup img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            background: #eee;
+        }
+        #detailPopup h3 {
+            margin: 6px 0;
+            font-size: 18px;
+            color: #333;
+        }
+        #detailPopup p {
+            margin: 6px 0 12px;
+            font-size: 14px;
+            color: #555;
+            line-height: 1.5;
+        }
+        #closeBtn {
+            display:inline-block;
+            padding:8px 14px;
+            background:#1976d2;
+            color:white;
+            border-radius:6px;
+            cursor:pointer;
+            text-decoration:none;
+        }
+    </style>
+</head>
+<body>
+<div id="canvas-wrap">
+    <div id="overlayNote">鼠标左键拖动平移 · 滚轮缩放 · 点击盒子查看详情</div>
+    <canvas id="c"></canvas>
+
+    <!-- 悬浮详情框 -->
+    <div id="detailPopup">
+        <img id="detailImg" src="" alt="">
+        <h3 id="detailTitle">标题</h3>
+        <p id="detailContent">内容</p>
+        <a id="closeBtn">关闭</a>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three/examples/js/controls/OrbitControls.js"></script>
+
+<script>
+    /* ---------- three.js 初始化 ---------- */
+    const canvas = document.getElementById('c');
+    const renderer = new THREE.WebGLRenderer({
+        canvas,
+        antialias: true,
+        alpha: true
+    });
+    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.shadowMap.enabled = true;
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0xf0f7ff); // 浅蓝色背景，确保盒子可见
+
+    // 调整相机位置，确保能看到盒子
+    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 2000);
+    camera.position.set(0, 6, 15); // 调整相机位置，更接近盒子
+
+    const controls = new THREE.OrbitControls(camera, canvas);
+    controls.enableRotate = false; // 禁止旋转
+    controls.enablePan = true;     // 启用平移
+    controls.screenSpacePanning = true; // 屏幕空间平移（非透视平移）
+    controls.enableZoom = true;
+    controls.panSpeed = 0.5;
+    controls.target.set(0, 2, 0);
+    controls.update();
+
+    // 简化光照设置，确保盒子可见
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+    scene.add(ambientLight);
+
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.6);
+    directionalLight.position.set(10, 15, 7.5);
+    directionalLight.castShadow = true;
+    scene.add(directionalLight);
+
+    // 创建地面
+    const groundGeometry = new THREE.PlaneGeometry(50, 50);
+    const groundMaterial = new THREE.MeshStandardMaterial({
+        color: 0x90ee90, // 浅绿色地面
+        roughness: 0.8
+    });
+    const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+    ground.rotation.x = -Math.PI / 2;
+    ground.position.y = 0;
+    ground.receiveShadow = true;
+    scene.add(ground);
+
+    /* ---------- 构建货架与盲盒 ---------- */
+    const shelf = {
+        shelfWidth: 14,
+        shelfDepth: 4,
+        shelfThickness: 0.25,
+        shelfSpacing: 3, // 增加层间距，避免遮挡
+        boxSize: {x: 2, y: 2, z: 2}, // 稍大一点的盒子
+        boxPaddingX: 0.5
+    };
+
+    // 构建货架
+    function buildShelf(levelCount) {
+        const poleW = 0.3;
+        const poleGeometry = new THREE.BoxGeometry(poleW, levelCount * shelf.shelfSpacing + 0.5, poleW);
+        const poleMaterial = new THREE.MeshStandardMaterial({color: 0x8b4513});
+
+        // 左右支柱
+        const leftPole = new THREE.Mesh(poleGeometry, poleMaterial);
+        const rightPole = new THREE.Mesh(poleGeometry, poleMaterial);
+        leftPole.position.set(-shelf.shelfWidth/2 - poleW/2, (levelCount-1)*shelf.shelfSpacing/2 + 0.5, 0);
+        rightPole.position.set(shelf.shelfWidth/2 + poleW/2, (levelCount-1)*shelf.shelfSpacing/2 + 0.5, 0);
+        scene.add(leftPole, rightPole);
+
+        // 每层隔板
+        for(let i = 0; i < levelCount; i++) {
+            const yPos = i * shelf.shelfSpacing + 0.5;
+            const shelfGeometry = new THREE.BoxGeometry(shelf.shelfWidth, shelf.shelfThickness, shelf.shelfDepth);
+            const shelfMaterial = new THREE.MeshStandardMaterial({color: 0xcd853f});
+            const shelfMesh = new THREE.Mesh(shelfGeometry, shelfMaterial);
+            shelfMesh.position.set(0, yPos, 0);
+            shelfMesh.receiveShadow = true;
+            scene.add(shelfMesh);
+        }
+    }
+
+    // 盲盒数据
+    const inputJSON = {
+        "第一层":{
+            "第一个":{"status":false,"is_show":true,"str":"盒子1","title":"标题1","content":"盒子1内容","img":"https://picsum.photos/600/400?random=1"},
+            "第二个":{"status":true,"is_show":true,"str":"盒子2","title":"标题2","content":"盒子2内容","img":"https://picsum.photos/600/400?random=2"}
+        },
+        "第二层":{
+            "第一个":{"status":false,"is_show":true,"str":"盒子3","title":"标题3","content":"盒子3内容","img":"https://picsum.photos/600/400?random=3"}
+        }
+    };
+
+    const layers = Object.keys(inputJSON);
+    buildShelf(layers.length);
+
+    // 盲盒组
+    const boxesGroup = new THREE.Group();
+    scene.add(boxesGroup);
+
+    // 创建文字纹理
+    function makeTextTexture(text) {
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+        canvas.width = 256;
+        canvas.height = 256;
+
+        context.fillStyle = '#ffffff';
+        context.fillRect(0, 0, canvas.width, canvas.height);
+        context.font = 'bold 36px Arial';
+        context.fillStyle = '#333333';
+        context.textAlign = 'center';
+        context.textBaseline = 'middle';
+        context.fillText(text, canvas.width / 2, canvas.height / 2);
+
+        return new THREE.CanvasTexture(canvas);
+    }
+
+    // 盲盒颜色
+    const boxColors = [0x4fc3f7, 0xf8bbd0, 0xc8e6c9]; // 亮蓝、亮粉、亮绿，确保可见
+
+    // 创建盲盒
+    layers.forEach((layerKey, layerIndex) => {
+        const layerObj = inputJSON[layerKey];
+        const slotKeys = Object.keys(layerObj);
+        const count = slotKeys.length;
+
+        // 计算水平排列位置
+        const totalWidth = count * shelf.boxSize.x + (count - 1) * shelf.boxPaddingX;
+        const startX = -totalWidth / 2 + shelf.boxSize.x / 2;
+        const yPos = layerIndex * shelf.shelfSpacing + 0.5 + shelf.shelfThickness + shelf.boxSize.y / 2;
+
+        slotKeys.forEach((slotKey, i) => {
+            const boxData = layerObj[slotKey];
+            if (!boxData.is_show) return;
+
+            const xPos = startX + i * (shelf.boxSize.x + shelf.boxPaddingX);
+
+            // 创建盲盒组
+            const boxGroup = new THREE.Group();
+            boxGroup.position.set(xPos, yPos, 0);
+            boxGroup.userData = { data: boxData };
+
+            // 盒身
+            const bodyGeometry = new THREE.BoxGeometry(
+                shelf.boxSize.x,
+                shelf.boxSize.y * 0.8,
+                shelf.boxSize.z
+            );
+            const bodyMaterial = new THREE.MeshStandardMaterial({
+                color: boxData.status ? 0xffecb3 : boxColors[i % boxColors.length],
+                roughness: 0.7
+            });
+            const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+            body.castShadow = true;
+            body.receiveShadow = true;
+
+            // 盒盖
+            const lidGeometry = new THREE.BoxGeometry(
+                shelf.boxSize.x * 1.05,
+                shelf.boxSize.y * 0.25,
+                shelf.boxSize.z * 1.05
+            );
+            const lidMaterial = new THREE.MeshStandardMaterial({
+                color: boxData.status ? 0xffd54f : 0xffffff,
+                roughness: 0.5
+            });
+            const lidPivot = new THREE.Group();
+            const lid = new THREE.Mesh(lidGeometry, lidMaterial);
+            lid.position.set(0, shelf.boxSize.y * 0.125 - shelf.boxSize.y * 0.05, 0);
+            lidPivot.add(lid);
+            lidPivot.position.y = shelf.boxSize.y * 0.4;
+
+            // 如果已经打开，旋转盒盖
+            if (boxData.status) {
+                lidPivot.rotation.x = -Math.PI / 2.5;
+            }
+
+            // 添加盒面文字
+            const textTexture = makeTextTexture(boxData.str);
+            const textGeometry = new THREE.PlaneGeometry(shelf.boxSize.x * 0.8, shelf.boxSize.y * 0.6);
+            const textMaterial = new THREE.MeshBasicMaterial({ map: textTexture, side: THREE.FrontSide });
+            const textMesh = new THREE.Mesh(textGeometry, textMaterial);
+            textMesh.position.z = shelf.boxSize.z / 2 + 0.01;
+
+            // 组装盲盒
+            boxGroup.add(body, lidPivot, textMesh);
+            boxGroup.userData.parts = {
+                lidPivot: lidPivot,
+                body: body,
+                bodyMaterial: bodyMaterial
+            };
+
+            boxesGroup.add(boxGroup);
+        });
+    });
+
+    /* ---------- 交互逻辑 ---------- */
+    const raycaster = new THREE.Raycaster();
+    const pointer = new THREE.Vector2();
+    let clickState = { animating: false };
+
+    // 点击盲盒处理
+    function onPointerDown(event) {
+        // 如果弹窗显示中，不处理canvas的点击事件
+        if (popup.classList.contains('show')) {
+            return;
+        }
+
+        const rect = canvas.getBoundingClientRect();
+        pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+        pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+        raycaster.setFromCamera(pointer, camera);
+        const intersects = raycaster.intersectObjects(boxesGroup.children, true);
+
+        if (intersects.length > 0) {
+            let box = intersects[0].object;
+            while (box && !box.userData.data) {
+                box = box.parent;
+            }
+            if (box && box.userData.data) {
+                handleBoxClick(box);
+            }
+        }
+    }
+
+    // 处理盲盒点击 - 开盖/关盖动画
+    function handleBoxClick(box) {
+        if (clickState.animating) return;
+        clickState.animating = true;
+
+        const data = box.userData.data;
+        const parts = box.userData.parts;
+        const targetOpen = !data.status;
+
+        const startRotation = parts.lidPivot.rotation.x;
+        const targetRotation = targetOpen ? -Math.PI / 2.5 : 0;
+        const startColor = new THREE.Color(parts.bodyMaterial.color.getHex());
+        const targetColor = new THREE.Color(targetOpen ? 0xffecb3 : boxColors[Math.floor(Math.random() * boxColors.length)]);
+
+        const duration = 500;
+        const start = performance.now();
+
+        function animate(currentTime) {
+            const elapsed = currentTime - start;
+            const progress = Math.min(elapsed / duration, 1);
+            const easeProgress = progress < 0.5
+                ? 4 * progress * progress * progress
+                : 1 - Math.pow(-2 * progress + 2, 3) / 2;
+
+            // 更新盖子旋转
+            parts.lidPivot.rotation.x = startRotation + (targetRotation - startRotation) * easeProgress;
+
+            // 更新颜色
+            parts.bodyMaterial.color.lerpColors(startColor, targetColor, easeProgress);
+
+            if (progress < 1) {
+                requestAnimationFrame(animate);
+            } else {
+                data.status = targetOpen;
+                if (targetOpen) {
+                    showDetail(data);
+                }
+                clickState.animating = false;
+            }
+        }
+
+        requestAnimationFrame(animate);
+    }
+
+    /* ---------- 详情弹窗逻辑 ---------- */
+    const popup = document.getElementById('detailPopup');
+    const img = document.getElementById('detailImg');
+    const title = document.getElementById('detailTitle');
+    const content = document.getElementById('detailContent');
+    const closeBtn = document.getElementById('closeBtn');
+
+    function showDetail(data) {
+        img.src = data.img || '';
+        title.textContent = data.title || data.str;
+        content.textContent = data.content || '暂无详情';
+        popup.classList.add('show');
+    }
+
+    // 关闭按钮点击事件 - 添加阻止事件冒泡
+    closeBtn.addEventListener('click', (e) => {
+        e.stopPropagation(); // 阻止事件冒泡到父元素
+        popup.classList.remove('show');
+    });
+
+    // 弹窗背景点击事件 - 添加阻止事件冒泡
+    popup.addEventListener('click', (e) => {
+        e.stopPropagation(); // 阻止事件冒泡
+        if (e.target === popup) {
+            popup.classList.remove('show');
+        }
+    });
+
+    /* ---------- 渲染与窗口大小调整 ---------- */
+    function resizeRenderer() {
+        const width = canvas.clientWidth;
+        const height = canvas.clientHeight;
+
+        if (canvas.width !== width || canvas.height !== height) {
+            renderer.setSize(width, height, false);
+            camera.aspect = width / height;
+            camera.updateProjectionMatrix();
+        }
+    }
+
+    function render() {
+        resizeRenderer();
+        renderer.render(scene, camera);
+        requestAnimationFrame(render);
+    }
+
+    // 启动渲染
+    render();
+
+    // 事件监听
+    window.addEventListener('pointerdown', onPointerDown);
+    window.addEventListener('resize', resizeRenderer);
+</script>
+</body>
+</html>
