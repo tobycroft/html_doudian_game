@@ -3,795 +3,533 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D盲盒货架展示 - 增强版</title>
+    <title>盲盒货架展示系统</title>
+    <script src="https://cdn.jsdelivr.net/npm/tvt.js@1.0.0/dist/tvt.min.js"></script>
     <style>
-        body {
+        * {
             margin: 0;
-            overflow: hidden;
+            padding: 0;
+            box-sizing: border-box;
             font-family: 'Arial', sans-serif;
+        }
+
+        body {
             background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
             color: white;
+            min-height: 100vh;
+            padding: 20px;
         }
-        #container {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            cursor: grab;
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
         }
-        #container:active {
-            cursor: grabbing;
-        }
-        #info {
-            position: absolute;
-            top: 10px;
-            width: 100%;
+
+        header {
             text-align: center;
-            z-index: 100;
-            font-size: 1.5em;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
         }
-        #controls {
-            position: absolute;
-            bottom: 20px;
-            left: 20px;
-            background: rgba(0,0,0,0.7);
-            padding: 15px;
-            border-radius: 10px;
-            z-index: 100;
+
+        h1 {
+            font-size: 2.8rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
         }
-        button {
-            background: #4CAF50;
-            border: none;
+
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .content {
+            display: flex;
+            gap: 30px;
+        }
+
+        .shelf-container {
+            flex: 3;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .json-container {
+            flex: 2;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .json-container h2 {
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        #json-input {
+            width: 100%;
+            height: 400px;
+            background: rgba(0, 0, 0, 0.5);
             color: white;
-            padding: 10px 15px;
-            margin: 5px;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background 0.3s;
-        }
-        button:hover {
-            background: #45a049;
-        }
-        #instructions {
-            position: absolute;
-            bottom: 20px;
-            right: 20px;
-            background: rgba(0,0,0,0.7);
+            border: 1px solid #555;
+            border-radius: 8px;
             padding: 15px;
-            border-radius: 10px;
-            max-width: 300px;
-            font-size: 0.9em;
+            font-family: monospace;
+            resize: vertical;
+            margin-bottom: 15px;
         }
-        .selected-info {
-            position: absolute;
-            top: 60px;
-            width: 100%;
-            text-align: center;
-            z-index: 100;
-            font-size: 1.2em;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+
+        .btn {
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
         }
-        #modal {
+
+        .btn:hover {
+            background: #ff5252;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .modal {
             display: none;
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0,0,0,0.8);
+            background: rgba(0, 0, 0, 0.8);
             z-index: 1000;
             justify-content: center;
             align-items: center;
         }
-        #modal-content {
-            background: #333;
-            padding: 20px;
-            border-radius: 10px;
+
+        .modal-content {
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f);
+            padding: 30px;
+            border-radius: 15px;
             max-width: 600px;
-            max-height: 80vh;
-            overflow-y: auto;
+            width: 90%;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.5);
             position: relative;
+            animation: modalAppear 0.4s ease-out;
         }
-        #close-modal {
+
+        @keyframes modalAppear {
+            from {
+                opacity: 0;
+                transform: translateY(-50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .close-btn {
             position: absolute;
-            top: 10px;
-            right: 10px;
-            background: #f44336;
-            border: none;
-            color: white;
-            width: 30px;
-            height: 30px;
-            border-radius: 50%;
+            top: 15px;
+            right: 20px;
+            font-size: 1.8rem;
             cursor: pointer;
+            color: white;
+            transition: color 0.3s;
         }
-        #modal-title {
-            margin-top: 0;
-            color: #FFD700;
+
+        .close-btn:hover {
+            color: #ff6b6b;
         }
-        #modal-image {
-            max-width: 100%;
-            height: auto;
-            margin: 10px 0;
+
+        .modal-title {
+            font-size: 1.8rem;
+            margin-bottom: 15px;
+            text-align: center;
         }
-        #json-editor {
-            position: absolute;
-            top: 100px;
-            left: 20px;
-            background: rgba(0,0,0,0.7);
-            padding: 15px;
-            border-radius: 10px;
-            width: 300px;
-            max-height: 400px;
-            overflow-y: auto;
-        }
-        #json-editor textarea {
+
+        .modal-img {
             width: 100%;
             height: 300px;
-            background: #222;
-            color: white;
-            border: 1px solid #555;
-            border-radius: 5px;
-            padding: 10px;
-            font-family: monospace;
+            object-fit: cover;
+            border-radius: 10px;
+            margin: 15px 0;
+            background: rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: rgba(255, 255, 255, 0.7);
         }
-        #apply-json {
-            margin-top: 10px;
+
+        .modal-content-text {
+            margin-top: 20px;
+            line-height: 1.6;
+        }
+
+        .shelf {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+            margin-top: 20px;
+        }
+
+        .shelf-row {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+
+        .box {
+            width: 120px;
+            height: 120px;
+            perspective: 600px;
+            cursor: pointer;
+        }
+
+        .box-inner {
+            position: relative;
             width: 100%;
+            height: 100%;
+            transform-style: preserve-3d;
+            transition: transform 0.6s;
         }
-        .status-indicator {
+
+        .box:hover .box-inner {
+            transform: rotateY(15deg) rotateX(5deg);
+        }
+
+        .box-front, .box-back {
             position: absolute;
-            bottom: 5px;
-            right: 5px;
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 10px;
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.3);
         }
-        .status-open {
-            background-color: #4CAF50;
+
+        .box-front {
+            background: linear-gradient(135deg, #ff9a9e, #fad0c4);
+            color: #333;
+            transform: rotateY(0deg);
         }
-        .status-closed {
-            background-color: #f44336;
+
+        .box-back {
+            background: linear-gradient(135deg, #a1c4fd, #c2e9fb);
+            color: #333;
+            transform: rotateY(180deg);
+        }
+
+        .box-opened .box-front {
+            background: linear-gradient(135deg, #4facfe, #00f2fe);
+        }
+
+        .box-hidden {
+            visibility: hidden;
+        }
+
+        .box-text {
+            font-weight: bold;
+            text-align: center;
+            font-size: 0.9rem;
+            margin-bottom: 5px;
+        }
+
+        .box-status {
+            font-size: 0.7rem;
+            text-align: center;
+            margin-top: 5px;
+        }
+
+        .shelf-label {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+            text-align: center;
+            color: #ffd700;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            padding: 20px;
+            font-size: 0.9rem;
+            opacity: 0.8;
         }
     </style>
 </head>
 <body>
-<div id="container"></div>
-<div id="info">3D盲盒货架展示 - 5层 × 5个盲盒</div>
-<div id="selectedInfo" class="selected-info"></div>
+<div class="container">
+    <header>
+        <h1>盲盒货架展示系统</h1>
+        <p class="subtitle">使用TVT.js动态生成盲盒货架，支持自定义JSON配置</p>
+    </header>
 
-<div id="json-editor">
-    <h3>JSON配置</h3>
-    <textarea id="json-input">{
-  "第一层": {
-    "第一个": {"status": true, "is_show": true, "str": "神秘盒子1", "status_str": "已打开", "title": "神秘盒子1详情", "content": "这是一个已经打开的神秘盒子，里面装满了惊喜！", "img": "https://via.placeholder.com/400x300/4CAF50/FFFFFF?text=神秘盒子1"},
-    "第二个": {"status": false, "is_show": true, "str": "魔法盒子2", "status_str": "未打开", "title": "魔法盒子2详情", "content": "这个魔法盒子尚未打开，充满未知的可能性！", "img": "https://via.placeholder.com/400x300/2196F3/FFFFFF?text=魔法盒子2"},
-    "第三个": {"status": true, "is_show": true, "str": "幸运盒子3", "status_str": "已打开", "title": "幸运盒子3详情", "content": "幸运盒子已经打开，带来了好运和惊喜！", "img": "https://via.placeholder.com/400x300/FF9800/FFFFFF?text=幸运盒子3"},
-    "第四个": {"status": false, "is_show": false, "str": "隐藏盒子4", "status_str": "未打开", "title": "隐藏盒子4详情", "content": "这个盒子是隐藏的，你看不到它！", "img": "https://via.placeholder.com/400x300/9C27B0/FFFFFF?text=隐藏盒子4"},
-    "第五个": {"status": true, "is_show": true, "str": "奇幻盒子5", "status_str": "已打开", "title": "奇幻盒子5详情", "content": "奇幻盒子已经打开，展现了奇妙的世界！", "img": "https://via.placeholder.com/400x300/607D8B/FFFFFF?text=奇幻盒子5"}
-  },
-  "第二层": {
-    "第一个": {"status": false, "is_show": true, "str": "星空盒子1", "status_str": "未打开", "title": "星空盒子1详情", "content": "星空盒子尚未打开，蕴含着星辰的力量！", "img": "https://via.placeholder.com/400x300/3F51B5/FFFFFF?text=星空盒子1"},
-    "第二个": {"status": true, "is_show": true, "str": "海洋盒子2", "status_str": "已打开", "title": "海洋盒子2详情", "content": "海洋盒子已经打开，带来了海洋的奥秘！", "img": "https://via.placeholder.com/400x300/00BCD4/FFFFFF?text=海洋盒子2"},
-    "第三个": {"status": false, "is_show": true, "str": "森林盒子3", "status_str": "未打开", "title": "森林盒子3详情", "content": "森林盒子尚未打开，充满了自然的生机！", "img": "https://via.placeholder.com/400x300/4CAF50/FFFFFF?text=森林盒子3"},
-    "第四个": {"status": true, "is_show": false, "str": "火焰盒子4", "status_str": "已打开", "title": "火焰盒子4详情", "content": "火焰盒子已经打开，但它是隐藏的！", "img": "https://via.placeholder.com/400x300/FF5722/FFFFFF?text=火焰盒子4"},
-    "第五个": {"status": false, "is_show": true, "str": "冰雪盒子5", "status_str": "未打开", "title": "冰雪盒子5详情", "content": "冰雪盒子尚未打开，蕴含着寒冷的力量！", "img": "https://via.placeholder.com/400x300/03A9F4/FFFFFF?text=冰雪盒子5"}
-  },
-  "第三层": {
-    "第一个": {"status": true, "is_show": true, "str": "黄金盒子1", "status_str": "已打开", "title": "黄金盒子1详情", "content": "黄金盒子已经打开，闪耀着财富的光芒！", "img": "https://via.placeholder.com/400x300/FFD700/000000?text=黄金盒子1"},
-    "第二个": {"status": false, "is_show": true, "str": "白银盒子2", "status_str": "未打开", "title": "白银盒子2详情", "content": "白银盒子尚未打开，蕴含着纯净的能量！", "img": "https://via.placeholder.com/400x300/C0C0C0/000000?text=白银盒子2"},
-    "第三个": {"status": true, "is_show": true, "str": "青铜盒子3", "status_str": "已打开", "title": "青铜盒子3详情", "content": "青铜盒子已经打开，散发着古老的气息！", "img": "https://via.placeholder.com/400x300/CD7F32/FFFFFF?text=青铜盒子3"},
-    "第四个": {"status": false, "is_show": true, "str": "水晶盒子4", "status_str": "未打开", "title": "水晶盒子4详情", "content": "水晶盒子尚未打开，晶莹剔透充满神秘！", "img": "https://via.placeholder.com/400x300/E0E0E0/000000?text=水晶盒子4"},
-    "第五个": {"status": true, "is_show": true, "str": "珍珠盒子5", "status_str": "已打开", "title": "珍珠盒子5详情", "content": "珍珠盒子已经打开，散发着柔和的光芒！", "img": "https://via.placeholder.com/400x300/F5F5F5/000000?text=珍珠盒子5"}
-  },
-  "第四层": {
-    "第一个": {"status": false, "is_show": true, "str": "翡翠盒子1", "status_str": "未打开", "title": "翡翠盒子1详情", "content": "翡翠盒子尚未打开，蕴含着自然的精华！", "img": "https://via.placeholder.com/400x300/00FF00/000000?text=翡翠盒子1"},
-    "第二个": {"status": true, "is_show": true, "str": "红宝石盒子2", "status_str": "已打开", "title": "红宝石盒子2详情", "content": "红宝石盒子已经打开，闪耀着热情的光芒！", "img": "https://via.placeholder.com/400x300/FF0000/FFFFFF?text=红宝石盒子2"},
-    "第三个": {"status": false, "is_show": true, "str": "蓝宝石盒子3", "status_str": "未打开", "title": "蓝宝石盒子3详情", "content": "蓝宝石盒子尚未打开，蕴含着深邃的智慧！", "img": "https://via.placeholder.com/400x300/0000FF/FFFFFF?text=蓝宝石盒子3"},
-    "第四个": {"status": true, "is_show": true, "str": "钻石盒子4", "status_str": "已打开", "title": "钻石盒子4详情", "content": "钻石盒子已经打开，闪耀着永恒的光芒！", "img": "https://via.placeholder.com/400x300/FFFFFF/000000?text=钻石盒子4"},
-    "第五个": {"status": false, "is_show": true, "str": "玛瑙盒子5", "status_str": "未打开", "title": "玛瑙盒子5详情", "content": "玛瑙盒子尚未打开，蕴含着大地的力量！", "img": "https://via.placeholder.com/400x300/800000/FFFFFF?text=玛瑙盒子5"}
-  },
-  "第五层": {
-    "第一个": {"status": true, "is_show": true, "str": "琥珀盒子1", "status_str": "已打开", "title": "琥珀盒子1详情", "content": "琥珀盒子已经打开，封存着远古的记忆！", "img": "https://via.placeholder.com/400x300/FFBF00/000000?text=琥珀盒子1"},
-    "第二个": {"status": false, "is_show": true, "str": "珊瑚盒子2", "status_str": "未打开", "title": "珊瑚盒子2详情", "content": "珊瑚盒子尚未打开，蕴含着海洋的生命力！", "img": "https://via.placeholder.com/400x300/FF7F50/000000?text=珊瑚盒子2"},
-    "第三个": {"status": true, "is_show": true, "str": "象牙盒子3", "status_str": "已打开", "title": "象牙盒子3详情", "content": "象牙盒子已经打开，散发着优雅的气息！", "img": "https://via.placeholder.com/400x300/FFFFF0/000000?text=象牙盒子3"},
-    "第四个": {"status": false, "is_show": true, "str": "黑曜石盒子4", "status_str": "未打开", "title": "黑曜石盒子4详情", "content": "黑曜石盒子尚未打开，蕴含着神秘的力量！", "img": "https://via.placeholder.com/400x300/464646/FFFFFF?text=黑曜石盒子4"},
-    "第五个": {"status": true, "is_show": true, "str": "月光石盒子5", "status_str": "已打开", "title": "月光石盒子5详情", "content": "月光石盒子已经打开，散发着柔和的光芒！", "img": "https://via.placeholder.com/400x300/B0C4DE/000000?text=月光石盒子5"}
-  }
-}</textarea>
-    <button id="apply-json">应用配置</button>
+    <div class="content">
+        <div class="shelf-container">
+            <div id="shelf-display" class="shelf">
+                <!-- 货架将通过TVT.js动态生成 -->
+            </div>
+            <div class="controls">
+                <button id="reset-btn" class="btn">重置货架</button>
+                <button id="random-btn" class="btn">随机状态</button>
+            </div>
+        </div>
+
+        <div class="json-container">
+            <h2>JSON配置</h2>
+            <textarea id="json-input">
+{
+    "第一层": {
+        "第一个": {"status": true, "is_show": true, "str": "神秘盲盒1", "status_str": "未打开可使用", "title": "神秘盲盒1", "content": "这是一个神秘的盲盒，内含惊喜物品，打开后即可获得。", "img": "https://via.placeholder.com/300x200/4facfe/ffffff?text=神秘盲盒1"},
+        "第二个": {"status": false, "is_show": true, "str": "神秘盲盒2", "status_str": "未打开可使用", "title": "神秘盲盒2", "content": "这是一个神秘的盲盒，内含惊喜物品，打开后即可获得。", "img": "https://via.placeholder.com/300x200/00f2fe/ffffff?text=神秘盲盒2"},
+        "第三个": {"status": true, "is_show": true, "str": "神秘盲盒3", "status_str": "已打开", "title": "神秘盲盒3", "content": "这是一个已经被打开的盲盒，里面是限量版物品。", "img": "https://via.placeholder.com/300x200/fad0c4/ffffff?text=神秘盲盒3"},
+        "第四个": {"status": false, "is_show": false, "str": "神秘盲盒4", "status_str": "未打开可使用", "title": "神秘盲盒4", "content": "这是一个神秘的盲盒，内含惊喜物品，打开后即可获得。", "img": "https://via.placeholder.com/300x200/ff9a9e/ffffff?text=神秘盲盒4"},
+        "第五个": {"status": true, "is_show": true, "str": "神秘盲盒5", "status_str": "已打开", "title": "神秘盲盒5", "content": "这是一个已经被打开的盲盒，里面是限量版物品。", "img": "https://via.placeholder.com/300x200/a1c4fd/ffffff?text=神秘盲盒5"}
+    },
+    "第二层": {
+        "第一个": {"status": false, "is_show": true, "str": "稀有盲盒1", "status_str": "未打开可使用", "title": "稀有盲盒1", "content": "这是一个稀有的盲盒，内含高价值物品，打开后即可获得。", "img": "https://via.placeholder.com/300x200/fdcbf1/ffffff?text=稀有盲盒1"},
+        "第二个": {"status": true, "is_show": true, "str": "稀有盲盒2", "status_str": "已打开", "title": "稀有盲盒2", "content": "这是一个已经被打开的稀有盲盒，里面是限量版物品。", "img": "https://via.placeholder.com/300x200/e6dee9/ffffff?text=稀有盲盒2"},
+        "第三个": {"status": false, "is_show": true, "str": "稀有盲盒3", "status_str": "未打开可使用", "title": "稀有盲盒3", "content": "这是一个稀有的盲盒，内含高价值物品，打开后即可获得。", "img": "https://via.placeholder.com/300x200/ffd1ff/ffffff?text=稀有盲盒3"},
+        "第四个": {"status": true, "is_show": false, "str": "稀有盲盒4", "status_str": "已打开", "title": "稀有盲盒4", "content": "这是一个已经被打开的稀有盲盒，里面是限量版物品。", "img": "https://via.placeholder.com/300x200/a8edea/ffffff?text=稀有盲盒4"},
+        "第五个": {"status": false, "is_show": true, "str": "稀有盲盒5", "status_str": "未打开可使用", "title": "稀有盲盒5", "content": "这是一个稀有的盲盒，内含高价值物品，打开后即可获得。", "img": "https://via.placeholder.com/300x200/fbed96/ffffff?text=稀有盲盒5"}
+    },
+    "第三层": {
+        "第一个": {"status": true, "is_show": true, "str": "限量盲盒1", "status_str": "已打开", "title": "限量盲盒1", "content": "这是一个限量版的盲盒，内含珍贵物品，打开后即可获得。", "img": "https://via.placeholder.com/300x200/d4fc79/ffffff?text=限量盲盒1"},
+        "第二个": {"status": false, "is_show": true, "str": "限量盲盒2", "status_str": "未打开可使用", "title": "限量盲盒2", "content": "这是一个限量版的盲盒，内含珍贵物品，打开后即可获得。", "img": "https://via.placeholder.com/300x200/96e6a1/ffffff?text=限量盲盒2"},
+        "第三个": {"status": true, "is_show": true, "str": "限量盲盒3", "status_str": "已打开", "title": "限量盲盒3", "content": "这是一个已经被打开的限量版盲盒，里面是珍贵物品。", "img": "https://via.placeholder.com/300x200/ffecd2/ffffff?text=限量盲盒3"},
+        "第四个": {"status": false, "is_show": false, "str": "限量盲盒4", "status_str": "未打开可使用", "title": "限量盲盒4", "content": "这是一个限量版的盲盒，内含珍贵物品，打开后即可获得。", "img": "https://via.placeholder.com/300x200/fcb69f/ffffff?text=限量盲盒4"},
+        "第五个": {"status": true, "is_show": true, "str": "限量盲盒5", "status_str": "已打开", "title": "限量盲盒5", "content": "这是一个已经被打开的限量版盲盒，里面是珍贵物品。", "img": "https://via.placeholder.com/300x200/c2e9fb/ffffff?text=限量盲盒5"}
+    },
+    "第四层": {
+        "第一个": {"status": false, "is_show": true, "str": "珍藏盲盒1", "status_str": "未打开可使用", "title": "珍藏盲盒1", "content": "这是一个珍藏版的盲盒，内含稀有物品，打开后即可获得。", "img": "https://via.placeholder.com/300x200/e0c3fc/ffffff?text=珍藏盲盒1"},
+        "第二个": {"status": true, "is_show": true, "str": "珍藏盲盒2", "status_str": "已打开", "title": "珍藏盲盒2", "content": "这是一个已经被打开的珍藏版盲盒，里面是稀有物品。", "img": "https://via.placeholder.com/300x200/8ec5fc/ffffff?text=珍藏盲盒2"},
+        "第三个": {"status": false, "is_show": true, "str": "珍藏盲盒3", "status_str": "未打开可使用", "title": "珍藏盲盒3", "content": "这是一个珍藏版的盲盒，内含稀有物品，打开后即可获得。", "img": "https://via.placeholder.com/300x200/fbc2eb/ffffff?text=珍藏盲盒3"},
+        "第四个": {"status": true, "is_show": false, "str": "珍藏盲盒4", "status_str": "已打开", "title": "珍藏盲盒4", "content": "这是一个已经被打开的珍藏版盲盒，里面是稀有物品。", "img": "https://via.placeholder.com/300x200/a6c1ee/ffffff?text=珍藏盲盒4"},
+        "第五个": {"status": false, "is_show": true, "str": "珍藏盲盒5", "status_str": "未打开可使用", "title": "珍藏盲盒5", "content": "这是一个珍藏版的盲盒，内含稀有物品，打开后即可获得。", "img": "https://via.placeholder.com/300x200/fdcbf1/ffffff?text=珍藏盲盒5"}
+    },
+    "第五层": {
+        "第一个": {"status": true, "is_show": true, "str": "终极盲盒1", "status_str": "已打开", "title": "终极盲盒1", "content": "这是一个终极版的盲盒，内含传说级物品，打开后即可获得。", "img": "https://via.placeholder.com/300x200/fad0c4/ffffff?text=终极盲盒1"},
+        "第二个": {"status": false, "is_show": true, "str": "终极盲盒2", "status_str": "未打开可使用", "title": "终极盲盒2", "content": "这是一个终极版的盲盒，内含传说级物品，打开后即可获得。", "img": "https://via.placeholder.com/300x200/ffd1ff/ffffff?text=终极盲盒2"},
+        "第三个": {"status": true, "is_show": true, "str": "终极盲盒3", "status_str": "已打开", "title": "终极盲盒3", "content": "这是一个已经被打开的终极版盲盒，里面是传说级物品。", "img": "https://via.placeholder.com/300x200/a8edea/ffffff?text=终极盲盒3"},
+        "第四个": {"status": false, "is_show": false, "str": "终极盲盒4", "status_str": "未打开可使用", "title": "终极盲盒4", "content": "这是一个终极版的盲盒，内含传说级物品，打开后即可获得。", "img": "https://via.placeholder.com/300x200/fbed96/ffffff?text=终极盲盒4"},
+        "第五个": {"status": true, "is_show": true, "str": "终极盲盒5", "status_str": "已打开", "title": "终极盲盒5", "content": "这是一个已经被打开的终极版盲盒，里面是传说级物品。", "img": "https://via.placeholder.com/300x200/d4fc79/ffffff?text=终极盲盒5"}
+    }
+}
+                </textarea>
+            <button id="apply-json" class="btn">应用JSON配置</button>
+        </div>
+    </div>
+
+    <footer>
+        <p>盲盒货架展示系统 &copy; 2023 | 使用TVT.js动态渲染</p>
+    </footer>
 </div>
 
-<div id="controls">
-    <button id="rotateToggle">旋转货架</button>
-    <button id="resetView">重置视图</button>
-    <button id="randomizeColors">随机颜色</button>
-    <button id="toggleLights">开关灯光</button>
-</div>
-
-<div id="instructions">
-    <p>操作指南:</p>
-    <p>• 鼠标左键拖动: 移动货架</p>
-    <p>• 鼠标右键拖动: 旋转视角</p>
-    <p>• 鼠标滚轮: 缩放</p>
-    <p>• 鼠标悬停: 盲盒放大</p>
-    <p>• 鼠标点击: 查看盲盒详情</p>
-</div>
-
-<div id="modal">
-    <div id="modal-content">
-        <button id="close-modal">×</button>
-        <h2 id="modal-title">盲盒详情</h2>
-        <img id="modal-image" src="" alt="盲盒图片">
-        <p id="modal-content-text">盲盒内容描述</p>
+<!-- 详情模态框 -->
+<div id="box-modal" class="modal">
+    <div class="modal-content">
+        <span class="close-btn">&times;</span>
+        <h2 class="modal-title" id="modal-title">盲盒详情</h2>
+        <div class="modal-img" id="modal-img">
+            <!-- 图片将动态加载 -->
+        </div>
+        <div class="modal-content-text" id="modal-content">
+            <!-- 内容将动态加载 -->
+        </div>
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/three@0.132.2/build/three.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.132.2/examples/js/controls/OrbitControls.js"></script>
 <script>
-    // 初始化场景
-    const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x222222);
+    // 初始化货架数据
+    let shelfData = {};
 
-    // 初始化相机
-    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-    camera.position.set(0, 0, 15);
+    // DOM元素
+    const shelfDisplay = document.getElementById('shelf-display');
+    const jsonInput = document.getElementById('json-input');
+    const applyJsonBtn = document.getElementById('apply-json');
+    const resetBtn = document.getElementById('reset-btn');
+    const randomBtn = document.getElementById('random-btn');
+    const modal = document.getElementById('box-modal');
+    const closeBtn = document.querySelector('.close-btn');
+    const modalTitle = document.getElementById('modal-title');
+    const modalImg = document.getElementById('modal-img');
+    const modalContent = document.getElementById('modal-content');
 
-    // 初始化渲染器
-    const renderer = new THREE.WebGLRenderer({ antialias: true });
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.shadowMap.enabled = true;
-    document.getElementById('container').appendChild(renderer.domElement);
-
-    // 添加轨道控制
-    const controls = new THREE.OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true;
-    controls.dampingFactor = 0.05;
-    controls.enablePan = true;
-    controls.enableRotate = true;
-    controls.enableZoom = true;
-
-    // 修改鼠标控制：左键拖动，右键旋转
-    controls.mouseButtons = {
-        LEFT: THREE.MOUSE.PAN,
-        MIDDLE: THREE.MOUSE.DOLLY,
-        RIGHT: THREE.MOUSE.ROTATE
-    };
-
-    // 添加光源
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-    scene.add(ambientLight);
-
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-    directionalLight.position.set(10, 20, 15);
-    directionalLight.castShadow = true;
-    directionalLight.shadow.mapSize.width = 2048;
-    directionalLight.shadow.mapSize.height = 2048;
-    scene.add(directionalLight);
-
-    // 跟踪选中的盲盒
-    let selectedBox = null;
-    let hoveredBox = null;
-    let boxData = {};
-
-    // 创建货架
-    function createShelf() {
-        const shelfGroup = new THREE.Group();
-
-        // 货架尺寸
-        const shelfWidth = 10;
-        const shelfHeight = 8;
-        const shelfDepth = 2;
-        const shelfThickness = 0.2;
-
-        // 创建货架材质
-        const shelfMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
-
-        // 创建货架底部
-        const bottomShelf = new THREE.Mesh(
-            new THREE.BoxGeometry(shelfWidth, shelfThickness, shelfDepth),
-            shelfMaterial
-        );
-        bottomShelf.position.y = -shelfHeight/2;
-        bottomShelf.castShadow = true;
-        bottomShelf.receiveShadow = true;
-        shelfGroup.add(bottomShelf);
-
-        // 创建货架顶部
-        const topShelf = new THREE.Mesh(
-            new THREE.BoxGeometry(shelfWidth, shelfThickness, shelfDepth),
-            shelfMaterial
-        );
-        topShelf.position.y = shelfHeight/2;
-        topShelf.castShadow = true;
-        topShelf.receiveShadow = true;
-        shelfGroup.add(topShelf);
-
-        // 创建货架支柱
-        const pillarGeometry = new THREE.BoxGeometry(shelfThickness, shelfHeight, shelfThickness);
-
-        const pillar1 = new THREE.Mesh(pillarGeometry, shelfMaterial);
-        pillar1.position.set(-shelfWidth/2 + shelfThickness/2, 0, -shelfDepth/2 + shelfThickness/2);
-        pillar1.castShadow = true;
-        pillar1.receiveShadow = true;
-        shelfGroup.add(pillar1);
-
-        const pillar2 = new THREE.Mesh(pillarGeometry, shelfMaterial);
-        pillar2.position.set(shelfWidth/2 - shelfThickness/2, 0, -shelfDepth/2 + shelfThickness/2);
-        pillar2.castShadow = true;
-        pillar2.receiveShadow = true;
-        shelfGroup.add(pillar2);
-
-        const pillar3 = new THREE.Mesh(pillarGeometry, shelfMaterial);
-        pillar3.position.set(-shelfWidth/2 + shelfThickness/2, 0, shelfDepth/2 - shelfThickness/2);
-        pillar3.castShadow = true;
-        pillar3.receiveShadow = true;
-        shelfGroup.add(pillar3);
-
-        const pillar4 = new THREE.Mesh(pillarGeometry, shelfMaterial);
-        pillar4.position.set(shelfWidth/2 - shelfThickness/2, 0, shelfDepth/2 - shelfThickness/2);
-        pillar4.castShadow = true;
-        pillar4.receiveShadow = true;
-        shelfGroup.add(pillar4);
-
-        // 创建层板
-        for (let i = 0; i < 5; i++) {
-            const levelY = -shelfHeight/2 + (i + 1) * shelfHeight/6;
-
-            const shelf = new THREE.Mesh(
-                new THREE.BoxGeometry(shelfWidth - shelfThickness*2, shelfThickness, shelfDepth - shelfThickness*2),
-                shelfMaterial
-            );
-            shelf.position.y = levelY;
-            shelf.castShadow = true;
-            shelf.receiveShadow = true;
-            shelfGroup.add(shelf);
-
-            // 创建盲盒
-            createBlindBoxes(shelfGroup, levelY + shelfThickness/2 + 0.3, i);
-        }
-
-        scene.add(shelfGroup);
-        return shelfGroup;
-    }
-
-    // 创建盲盒
-    function createBlindBoxes(shelfGroup, levelY, levelIndex) {
-        const boxSize = 0.8;
-        const colors = [
-            0xFF6B6B, 0x4ECDC4, 0x45B7D1, 0x96CEB4, 0xFFEAA7,
-            0xDDA0DD, 0x98D8C8, 0xF7DC6F, 0xBB8FCE, 0x85C1E9
-        ];
-
-        // 获取当前层数据
-        const layerKey = `第${levelIndex+1}层`;
-        const layerData = boxData[layerKey] || {};
-
-        console.log(`创建第${levelIndex+1}层盲盒，数据:`, layerData);
-
-        for (let i = 0; i < 5; i++) {
-            const positionKey = `第${i+1}个`;
-            const boxDataItem = layerData[positionKey] || {};
-
-            console.log(`位置${i+1}的数据:`, boxDataItem);
-
-            // 如果盒子不显示，跳过创建
-            if (boxDataItem.is_show === false) {
-                console.log(`位置${i+1}的盒子不显示，跳过创建`);
-                continue;
-            }
-
-            // 创建盒子几何体 - 根据状态决定盒子外观
-            let boxGeometry;
-            if (boxDataItem.status) {
-                // 已打开的盒子 - 使用打开的样式
-                boxGeometry = new THREE.BoxGeometry(boxSize, boxSize, boxSize);
-            } else {
-                // 未打开的盒子 - 使用封闭的样式
-                boxGeometry = new THREE.BoxGeometry(boxSize, boxSize, boxSize);
-            }
-
-            // 根据状态设置盒子颜色
-            let boxColor = colors[(levelIndex * 5 + i) % colors.length];
-            if (boxDataItem.status) {
-                // 已打开的盒子使用较浅的颜色
-                boxColor = lightenColor(boxColor, 0.3);
-            } else {
-                // 未打开的盒子使用较深的颜色
-                boxColor = darkenColor(boxColor, 0.2);
-            }
-
-            const boxMaterial = new THREE.MeshLambertMaterial({
-                color: boxColor,
-                transparent: true,
-                opacity: 0.9
-            });
-
-            const blindBox = new THREE.Mesh(boxGeometry, boxMaterial);
-            blindBox.position.x = -4 + i * 2;
-            blindBox.position.y = levelY;
-            blindBox.position.z = 0;
-            blindBox.castShadow = true;
-            blindBox.receiveShadow = true;
-
-            // 添加盲盒标识和数据
-            blindBox.userData = {
-                isBlindBox: true,
-                originalScale: 1.0,
-                level: levelIndex,
-                position: i,
-                data: boxDataItem
-            };
-
-            shelfGroup.add(blindBox);
-
-            // 添加盒子上的文字和图案
-            addBoxTextAndPattern(blindBox, boxDataItem);
-
-            // 添加状态指示器
-            addStatusIndicator(blindBox, boxDataItem.status);
-        }
-    }
-
-    // 颜色处理函数
-    function lightenColor(color, factor) {
-        const r = Math.min(255, ((color >> 16) & 0xFF) * (1 + factor));
-        const g = Math.min(255, ((color >> 8) & 0xFF) * (1 + factor));
-        const b = Math.min(255, (color & 0xFF) * (1 + factor));
-        return (Math.floor(r) << 16) + (Math.floor(g) << 8) + Math.floor(b);
-    }
-
-    function darkenColor(color, factor) {
-        const r = Math.max(0, ((color >> 16) & 0xFF) * (1 - factor));
-        const g = Math.max(0, ((color >> 8) & 0xFF) * (1 - factor));
-        const b = Math.max(0, (color & 0xFF) * (1 - factor));
-        return (Math.floor(r) << 16) + (Math.floor(g) << 8) + Math.floor(b);
-    }
-
-    // 添加盒子上的文字和图案
-    function addBoxTextAndPattern(box, boxDataItem) {
-        const text = boxDataItem.str || "盲盒";
-        const statusText = boxDataItem.status_str || "未知";
-
-        // 创建正面文字
-        createTextPlane(box, text, 0, 0, box.geometry.parameters.height/2 + 0.01, 0.6, 0.3);
-
-        // 创建背面文字
-        createTextPlane(box, statusText, 0, 0, -box.geometry.parameters.height/2 - 0.01, 0.8, 0.2, true);
-
-        // 为已打开的盒子添加特殊标记
-        if (boxDataItem.status) {
-            addOpenBoxDecoration(box);
-        }
-    }
-
-    // 创建文字平面
-    function createTextPlane(parent, text, x, y, z, width, height, isBack = false) {
-        const canvas = document.createElement('canvas');
-        const context = canvas.getContext('2d');
-        canvas.width = 256;
-        canvas.height = 128;
-
-        // 绘制背景
-        context.fillStyle = 'rgba(0, 0, 0, 0.7)';
-        context.fillRect(0, 0, canvas.width, canvas.height);
-
-        // 绘制文字
-        context.font = 'bold 40px Arial';
-        context.fillStyle = 'white';
-        context.textAlign = 'center';
-        context.textBaseline = 'middle';
-        context.fillText(text, canvas.width/2, canvas.height/2);
-
-        const texture = new THREE.CanvasTexture(canvas);
-        const material = new THREE.MeshBasicMaterial({
-            map: texture,
-            transparent: true,
-            side: THREE.DoubleSide
-        });
-
-        const plane = new THREE.Mesh(
-            new THREE.PlaneGeometry(width, height),
-            material
-        );
-
-        plane.position.set(x, y, z);
-
-        // 如果是背面文字，需要旋转
-        if (isBack) {
-            plane.rotation.y = Math.PI;
-        }
-
-        parent.add(plane);
-    }
-
-    // 为已打开的盒子添加装饰
-    function addOpenBoxDecoration(box) {
-        // 添加一个打开的盖子效果
-        const lidGeometry = new THREE.BoxGeometry(
-            box.geometry.parameters.width,
-            box.geometry.parameters.height * 0.2,
-            box.geometry.parameters.depth
-        );
-        const lidMaterial = new THREE.MeshLambertMaterial({
-            color: 0xFFFFFF,
-            transparent: true,
-            opacity: 0.8
-        });
-
-        const lid = new THREE.Mesh(lidGeometry, lidMaterial);
-        lid.position.set(
-            0,
-            box.geometry.parameters.height/2 + 0.1,
-            0
-        );
-        lid.rotation.x = Math.PI / 6; // 稍微倾斜，模拟打开状态
-
-        box.add(lid);
-    }
-
-    // 添加状态指示器
-    function addStatusIndicator(box, status) {
-        const geometry = new THREE.SphereGeometry(0.05, 8, 8);
-        const material = new THREE.MeshBasicMaterial({
-            color: status ? 0x4CAF50 : 0xf44336
-        });
-
-        const indicator = new THREE.Mesh(geometry, material);
-        indicator.position.set(
-            box.geometry.parameters.width/2 - 0.1,
-            box.geometry.parameters.height/2 - 0.1,
-            box.geometry.parameters.depth/2 + 0.01
-        );
-
-        box.add(indicator);
-    }
-
-    // 初始化JSON数据
-    function initBoxData() {
+    // 初始化函数
+    function init() {
+        // 解析初始JSON数据
         try {
-            const jsonText = document.getElementById('json-input').value;
-            console.log("正在解析JSON:", jsonText);
-            boxData = JSON.parse(jsonText);
-            console.log("JSON数据已加载:", boxData);
-            return true;
+            shelfData = JSON.parse(jsonInput.value);
+            renderShelf();
         } catch (e) {
-            console.error('JSON解析错误:', e);
-            alert('JSON格式错误，请检查JSON格式是否正确');
-            return false;
+            alert('JSON格式错误，请检查后重试');
+            console.error(e);
         }
+
+        // 事件监听
+        applyJsonBtn.addEventListener('click', applyJson);
+        resetBtn.addEventListener('click', resetShelf);
+        randomBtn.addEventListener('click', randomizeStatus);
+        closeBtn.addEventListener('click', () => {
+            modal.style.display = 'none';
+        });
+
+        // 点击模态框外部关闭
+        window.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.style.display = 'none';
+            }
+        });
     }
-
-    // 创建货架
-    let shelf;
-    function createOrUpdateShelf() {
-        // 移除旧的货架
-        if (shelf) {
-            console.log("移除旧的货架");
-            scene.remove(shelf);
-            // 清除所有相关的对象
-            shelf.traverse((child) => {
-                if (child.geometry) child.geometry.dispose();
-                if (child.material) {
-                    if (Array.isArray(child.material)) {
-                        child.material.forEach(material => material.dispose());
-                    } else {
-                        child.material.dispose();
-                    }
-                }
-            });
-        }
-
-        // 创建新的货架
-        console.log("创建新的货架");
-        shelf = createShelf();
-        console.log("货架已更新");
-
-        // 重置选中状态
-        selectedBox = null;
-        hoveredBox = null;
-        document.getElementById('selectedInfo').textContent = '';
-    }
-
-    // 初始化
-    initBoxData();
-    createOrUpdateShelf();
-
-    // 动画循环
-    let isRotating = false;
-    function animate() {
-        requestAnimationFrame(animate);
-
-        if (isRotating) {
-            shelf.rotation.y += 0.005;
-        }
-
-        controls.update();
-        renderer.render(scene, camera);
-    }
-
-    animate();
-
-    // 窗口大小调整
-    window.addEventListener('resize', () => {
-        camera.aspect = window.innerWidth / window.innerHeight;
-        camera.updateProjectionMatrix();
-        renderer.setSize(window.innerWidth, window.innerHeight);
-    });
-
-    // 控制按钮功能
-    document.getElementById('rotateToggle').addEventListener('click', () => {
-        isRotating = !isRotating;
-    });
-
-    document.getElementById('resetView').addEventListener('click', () => {
-        controls.reset();
-        camera.position.set(0, 0, 15);
-        if (shelf) {
-            shelf.position.set(0, 0, 0);
-            shelf.rotation.set(0, 0, 0);
-        }
-    });
-
-    document.getElementById('randomizeColors').addEventListener('click', () => {
-        if (shelf) {
-            shelf.traverse((child) => {
-                if (child.isMesh && child.material && child.userData.isBlindBox) {
-                    child.material.color.setHex(Math.random() * 0xFFFFFF);
-                }
-            });
-        }
-    });
-
-    document.getElementById('toggleLights').addEventListener('click', () => {
-        ambientLight.visible = !ambientLight.visible;
-        directionalLight.visible = !directionalLight.visible;
-    });
 
     // 应用JSON配置
-    document.getElementById('apply-json').addEventListener('click', () => {
-        console.log("应用JSON配置按钮被点击");
-        if (initBoxData()) {
-            createOrUpdateShelf();
+    function applyJson() {
+        try {
+            shelfData = JSON.parse(jsonInput.value);
+            renderShelf();
+        } catch (e) {
+            alert('JSON格式错误，请检查后重试');
+            console.error(e);
         }
-    });
-
-    // 模态框控制
-    document.getElementById('close-modal').addEventListener('click', () => {
-        document.getElementById('modal').style.display = 'none';
-    });
-
-    // 鼠标移动事件 - 检测悬停
-    const mouse = new THREE.Vector2();
-    const raycaster = new THREE.Raycaster();
-
-    window.addEventListener('mousemove', (event) => {
-        // 计算鼠标在归一化设备坐标中的位置
-        mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-        mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
-
-        // 更新射线
-        raycaster.setFromCamera(mouse, camera);
-
-        // 计算与射线相交的物体
-        const intersects = raycaster.intersectObjects(scene.children, true);
-
-        // 如果没有选中盲盒，处理悬停效果
-        if (!selectedBox) {
-            let foundBox = false;
-
-            for (let i = 0; i < intersects.length; i++) {
-                const object = intersects[i].object;
-
-                // 查找盲盒（可能是盲盒本身或其子元素）
-                let blindBox = object;
-                while (blindBox && !blindBox.userData.isBlindBox && blindBox.parent) {
-                    blindBox = blindBox.parent;
-                }
-
-                if (blindBox && blindBox.userData.isBlindBox) {
-                    // 如果悬停在新的盲盒上
-                    if (hoveredBox !== blindBox) {
-                        // 恢复之前悬停的盲盒
-                        if (hoveredBox) {
-                            hoveredBox.scale.set(
-                                hoveredBox.userData.originalScale,
-                                hoveredBox.userData.originalScale,
-                                hoveredBox.userData.originalScale
-                            );
-                        }
-
-                        // 放大当前悬停的盲盒
-                        blindBox.scale.set(1.2, 1.2, 1.2);
-                        hoveredBox = blindBox;
-                    }
-                    foundBox = true;
-                    break;
-                }
-            }
-
-            // 如果没有悬停在盲盒上，恢复之前悬停的盲盒
-            if (!foundBox && hoveredBox) {
-                hoveredBox.scale.set(
-                    hoveredBox.userData.originalScale,
-                    hoveredBox.userData.originalScale,
-                    hoveredBox.userData.originalScale
-                );
-                hoveredBox = null;
-            }
-        }
-    });
-
-    // 鼠标点击事件 - 选择盲盒并显示详情
-    window.addEventListener('click', (event) => {
-        // 更新射线
-        raycaster.setFromCamera(mouse, camera);
-
-        // 计算与射线相交的物体
-        const intersects = raycaster.intersectObjects(scene.children, true);
-
-        for (let i = 0; i < intersects.length; i++) {
-            const object = intersects[i].object;
-
-            // 查找盲盒（可能是盲盒本身或其子元素）
-            let blindBox = object;
-            while (blindBox && !blindBox.userData.isBlindBox && blindBox.parent) {
-                blindBox = blindBox.parent;
-            }
-
-            if (blindBox && blindBox.userData.isBlindBox) {
-                // 显示盲盒详情
-                showBoxDetails(blindBox.userData.data);
-
-                // 如果点击了已选中的盲盒，取消选择
-                if (selectedBox === blindBox) {
-                    blindBox.scale.set(
-                        blindBox.userData.originalScale,
-                        blindBox.userData.originalScale,
-                        blindBox.userData.originalScale
-                    );
-                    selectedBox = null;
-                    document.getElementById('selectedInfo').textContent = '';
-                } else {
-                    // 恢复之前选中的盲盒
-                    if (selectedBox) {
-                        selectedBox.scale.set(
-                            selectedBox.userData.originalScale,
-                            selectedBox.userData.originalScale,
-                            selectedBox.userData.originalScale
-                        );
-                    }
-
-                    // 选中新的盲盒
-                    blindBox.scale.set(1.3, 1.3, 1.3);
-                    selectedBox = blindBox;
-
-                    // 更新信息显示
-                    document.getElementById('selectedInfo').textContent =
-                        `选中盲盒: 第${blindBox.userData.level + 1}层 第${blindBox.userData.position + 1}个`;
-                }
-
-                // 清除悬停状态
-                if (hoveredBox === blindBox) {
-                    hoveredBox.scale.set(
-                        hoveredBox.userData.originalScale,
-                        hoveredBox.userData.originalScale,
-                        hoveredBox.userData.originalScale
-                    );
-                    hoveredBox = null;
-                }
-                break;
-            }
-        }
-    });
-
-    // 显示盲盒详情
-    function showBoxDetails(data) {
-        document.getElementById('modal-title').textContent = data.title || '盲盒详情';
-        document.getElementById('modal-image').src = data.img || '';
-        document.getElementById('modal-content-text').textContent = data.content || '暂无描述';
-        document.getElementById('modal').style.display = 'flex';
     }
+
+    // 重置货架
+    function resetShelf() {
+        try {
+            shelfData = JSON.parse(jsonInput.value);
+            renderShelf();
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
+    // 随机状态
+    function randomizeStatus() {
+        for (const layer in shelfData) {
+            for (const box in shelfData[layer]) {
+                // 随机设置status
+                shelfData[layer][box].status = Math.random() > 0.5;
+                // 随机设置is_show
+                if (Math.random() > 0.8) {
+                    shelfData[layer][box].is_show = false;
+                } else {
+                    shelfData[layer][box].is_show = true;
+                }
+
+                // 根据status更新status_str
+                if (shelfData[layer][box].status) {
+                    shelfData[layer][box].status_str = "已打开";
+                } else {
+                    shelfData[layer][box].status_str = "未打开可使用";
+                }
+            }
+        }
+        renderShelf();
+    }
+
+    // 渲染货架
+    function renderShelf() {
+        shelfDisplay.innerHTML = '';
+
+        for (const layer in shelfData) {
+            const shelfRow = document.createElement('div');
+            shelfRow.className = 'shelf-row';
+
+            const shelfLabel = document.createElement('div');
+            shelfLabel.className = 'shelf-label';
+            shelfLabel.textContent = layer;
+
+            shelfDisplay.appendChild(shelfLabel);
+
+            for (const box in shelfData[layer]) {
+                const boxData = shelfData[layer][box];
+
+                const boxElement = document.createElement('div');
+                boxElement.className = `box ${!boxData.is_show ? 'box-hidden' : ''} ${boxData.status ? 'box-opened' : ''}`;
+
+                if (boxData.is_show) {
+                    boxElement.innerHTML = `
+                            <div class="box-inner">
+                                <div class="box-front">
+                                    <div class="box-text">${boxData.str}</div>
+                                    <div class="box-status">${boxData.status_str}</div>
+                                </div>
+                                <div class="box-back">
+                                    <div class="box-text">${boxData.str}</div>
+                                    <div class="box-status">${boxData.status_str}</div>
+                                </div>
+                            </div>
+                        `;
+
+                    // 添加点击事件
+                    boxElement.addEventListener('click', () => {
+                        showBoxDetails(boxData);
+                    });
+                } else {
+                    // 创建占位盒子
+                    boxElement.innerHTML = `
+                            <div class="box-inner">
+                                <div class="box-front" style="background: rgba(255,255,255,0.1);"></div>
+                                <div class="box-back" style="background: rgba(255,255,255,0.1);"></div>
+                            </div>
+                        `;
+                }
+
+                shelfRow.appendChild(boxElement);
+            }
+
+            shelfDisplay.appendChild(shelfRow);
+        }
+    }
+
+    // 显示盒子详情
+    function showBoxDetails(boxData) {
+        modalTitle.textContent = boxData.title;
+        modalContent.textContent = boxData.content;
+
+        // 设置图片
+        modalImg.innerHTML = '';
+        const img = document.createElement('img');
+        img.src = boxData.img;
+        img.alt = boxData.title;
+        img.style.width = '100%';
+        img.style.height = '100%';
+        img.style.objectFit = 'cover';
+        img.style.borderRadius = '10px';
+        modalImg.appendChild(img);
+
+        modal.style.display = 'flex';
+    }
+
+    // 初始化应用
+    document.addEventListener('DOMContentLoaded', init);
 </script>
 </body>
 </html>
