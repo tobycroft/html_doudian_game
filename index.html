@@ -41,19 +41,29 @@
         h1 {
             font-size: 2.4rem;
             margin-bottom: 1.4rem;
+            text-align: center;
+        }
+
+        .buttons-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 0.6rem;
+            width: 90%;
+            max-width: 600px;
         }
 
         .btn {
             font-size: 1.2rem;
             padding: 0.8rem 1.8rem;
-            margin: 0.6rem;
             border: none;
             border-radius: 0.8rem;
             cursor: pointer;
             background: rgba(255, 255, 255, 0.9);
             color: #333;
             transition: background 0.3s, transform 0.2s;
-            width: 85%;
+            width: calc(50% - 0.6rem);
+            box-sizing: border-box;
         }
 
         .btn:hover {
@@ -80,6 +90,15 @@
 
         #sanrio1 {
         }
+
+        /* 响应式调整 */
+        @media (max-width: 480px) {
+            .btn {
+                width: 100%;
+                font-size: 1rem;
+                padding: 0.7rem 1rem;
+            }
+        }
     </style>
 </head>
 <body>
@@ -87,21 +106,20 @@
 
 <div class="container">
     <h1>比特服务 🎉</h1>
-    <button class="btn" id="wheel">进入转盘</button>
-    <button class="btn" id="rand1">弹窗随机数</button>
-    <button class="btn" id="rand2">直出随机数</button>
-    <button class="btn" id="youduoqu_rand">卡牌随机抽</button>
-    <button class="btn" id="huojia2d">2D点盒货架</button>
-    <button class="btn" id="huojia3d1">3D点盒货架</button>
-    <button class="btn" id="huojia3d2">3D货架测试</button>
-    <!--    <button class="btn" id="dog1">线条小狗超动态1</button>-->
-    <button class="btn" id="dog2">线条小狗超动态2</button>
-    <button class="btn" id="sanrio1">三丽鸥超动态1</button>
-
+    <div class="buttons-container">
+        <button class="btn" id="wheel">进入转盘</button>
+        <button class="btn" id="rand1">弹窗随机数</button>
+        <button class="btn" id="rand2">直出随机数</button>
+        <button class="btn" id="youduoqu_rand">卡牌随机抽</button>
+        <button class="btn" id="huojia2d">2D点盒货架</button>
+        <button class="btn" id="huojia3d1">3D点盒货架</button>
+        <button class="btn" id="huojia3d2">3D货架测试</button>
+        <button class="btn" id="dog2">线条小狗超动态2</button>
+        <button class="btn" id="sanrio1">三丽鸥超动态1</button>
+    </div>
 </div>
 
 <script>
-
     const btns = document.getElementsByClassName('btn')
     for (const i in btns) {
         if (btns[i].id) {
@@ -110,12 +128,8 @@
             })
         } else {
             console.log(btns[i])
-
         }
-
-
     }
-
 </script>
 </body>
 </html>
