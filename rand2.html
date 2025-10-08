@@ -1,11 +1,14 @@
 <!DOCTYPE html>
 <html lang="zh">
 <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
     <title>随机数字展示器</title>
     <style>
-        :root { font-size: 16px; }
+        :root {
+            font-size: 16px;
+        }
+
         body {
             margin: 0;
             padding: 1rem;
@@ -19,7 +22,13 @@
             box-sizing: border-box;
             padding-bottom: 80px; /* 为底部按钮留出空间 */
         }
-        h1 { margin: 0.5rem 0 1.5rem; font-size: 1.6rem; font-weight: 800; text-align: center; }
+
+        h1 {
+            margin: 0.5rem 0 1.5rem;
+            font-size: 1.6rem;
+            font-weight: 800;
+            text-align: center;
+        }
 
         .controls {
             display: flex;
@@ -29,6 +38,7 @@
             width: 85%; /* 与按钮宽度一致 */
             margin-bottom: 1.5rem;
         }
+
         .seg-control {
             display: flex;
             align-items: center;
@@ -36,16 +46,18 @@
             background: white;
             padding: 0.6rem 0.9rem;
             border-radius: 0.7rem;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.06);
-            border: 1px solid rgba(0,0,0,0.06);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+            border: 1px solid rgba(0, 0, 0, 0.06);
             width: 100%;
         }
+
         .seg-control label {
             font-size: 1.2rem;
             user-select: none;
             flex: 1;
             font-weight: 700; /* 加粗标签 */
         }
+
         .seg-control input[type="number"] {
             width: 6rem;
             padding: 0.5rem;
@@ -64,13 +76,14 @@
             padding: 0.8rem;
             font-size: 1.1rem;
             cursor: pointer;
-            box-shadow: 0 2px 6px rgba(37,99,235,0.18);
+            box-shadow: 0 2px 6px rgba(37, 99, 235, 0.18);
             width: 85%; /* 按钮宽度为屏幕的85% */
             height: auto; /* 自动高度，根据内容调整 */
         }
+
         .btn.secondary {
             background: #ef4444;
-            box-shadow: 0 2px 6px rgba(239,68,68,0.18);
+            box-shadow: 0 2px 6px rgba(239, 68, 68, 0.18);
             position: fixed; /* 固定在底部 */
             bottom: 20px; /* 距离底部的距离 */
             left: 50%;
@@ -93,16 +106,18 @@
             border-radius: 1rem;
             text-align: center;
             width: 85%; /* 与按钮宽度一致 */
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
             margin-top: 1rem;
             margin-bottom: auto;
         }
+
         .result-display .label {
             font-size: 1.1rem;
             margin-bottom: 0.5rem;
             color: #666;
             font-weight: 600;
         }
+
         .result-display .bignum {
             font-size: 8rem;
             font-weight: 900;
@@ -111,9 +126,11 @@
             line-height: 1;
             transition: transform 0.2s ease;
         }
+
         .result-display .bignum:active {
             transform: scale(0.95);
         }
+
         .initial-message {
             color: #888;
             font-size: 1.1rem;
@@ -121,10 +138,14 @@
         }
 
         @media (max-width: 360px) {
-            .result-display .bignum { font-size: 6.5rem; }
+            .result-display .bignum {
+                font-size: 6.5rem;
+            }
+
             .seg-control label, .seg-control input[type="number"] {
                 font-size: 1.1rem;
             }
+
             #counter {
                 font-size: 1.2rem;
             }
@@ -138,7 +159,7 @@
 <div class="controls">
     <div class="seg-control">
         <label for="maxNumInput">最大数字</label>
-        <input id="maxNumInput" type="number" min="1" max="999" value="10" inputmode="numeric" pattern="[0-9]*" />
+        <input id="maxNumInput" type="number" min="1" max="999" value="15" inputmode="numeric" pattern="[0-9]*"/>
     </div>
 </div>
 
@@ -158,7 +179,8 @@
 <button id="resetBtn" class="btn secondary" type="button">重新开始</button>
 
 <script>
-    (function(){
+    var rst = 0;
+    (function () {
         const generateBtn = document.getElementById('generateBtn');
         const resetBtn = document.getElementById('resetBtn');
         const maxInput = document.getElementById('maxNumInput');
@@ -185,6 +207,8 @@
             const max = Math.max(1, parseInt(maxInput.value) || 15);
             const num = Math.floor(Math.random() * max) + 1;
 
+            // console.log(max)
+
             clickCount++;
             counterEl.textContent = `点击次数: ${clickCount}`;
 
@@ -192,6 +216,8 @@
         });
 
         resetBtn.addEventListener('click', () => {
+            rst++
+            console.log(rst)
             clickCount = 0;
             counterEl.textContent = '点击次数: 0';
 
