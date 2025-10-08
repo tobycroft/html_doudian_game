@@ -17,16 +17,17 @@
             align-items: center;
             min-height: 100vh;
             box-sizing: border-box;
+            padding-bottom: 80px; /* 为底部按钮留出空间 */
         }
-        h1 { margin: 0.5rem 0 1rem; font-size: 1.5rem; font-weight: 700; text-align: center; }
+        h1 { margin: 0.5rem 0 1.5rem; font-size: 1.5rem; font-weight: 700; text-align: center; }
 
         .controls {
             display: flex;
             gap: 0.8rem;
             align-items: center;
             justify-content: center;
-            width: 100%;
-            margin-bottom: 1rem;
+            width: 85%; /* 与按钮宽度一致 */
+            margin-bottom: 1.5rem;
         }
         .seg-control {
             display: flex;
@@ -37,11 +38,11 @@
             border-radius: 0.7rem;
             box-shadow: 0 2px 6px rgba(0,0,0,0.06);
             border: 1px solid rgba(0,0,0,0.06);
-            flex: 1;
+            width: 100%;
         }
-        .seg-control label { font-size: 1rem; user-select: none; }
+        .seg-control label { font-size: 1rem; user-select: none; flex: 1; }
         .seg-control input[type="number"] {
-            width: 4rem;
+            width: 6rem;
             padding: 0.4rem;
             font-size: 1rem;
             border-radius: 0.45rem;
@@ -49,30 +50,30 @@
             text-align: center;
         }
 
-        .button-group {
-            display: flex;
-            gap: 0.8rem;
-            width: 100%;
-            margin-bottom: 1.2rem;
-        }
         .btn {
             background: #2563eb;
             color: #fff;
             border: none;
             border-radius: 0.6rem;
-            padding: 0.6rem;
-            font-size: 1rem;
+            padding: 0.8rem;
+            font-size: 1.1rem;
             cursor: pointer;
             box-shadow: 0 2px 6px rgba(37,99,235,0.18);
-            flex: 1;
+            width: 85%; /* 按钮宽度为屏幕的85% */
+            height: auto; /* 自动高度，根据内容调整 */
         }
         .btn.secondary {
             background: #ef4444;
             box-shadow: 0 2px 6px rgba(239,68,68,0.18);
+            position: fixed; /* 固定在底部 */
+            bottom: 20px; /* 距离底部的距离 */
+            left: 50%;
+            transform: translateX(-50%); /* 水平居中 */
+            z-index: 10;
         }
 
         #counter {
-            margin-bottom: 1.5rem;
+            margin: 1.5rem 0;
             font-size: 1rem;
             color: #333;
             text-align: center;
@@ -84,10 +85,9 @@
             padding: 1rem 0.8rem;
             border-radius: 1rem;
             text-align: center;
-            width: 100%;
-            max-width: 300px;
+            width: 85%; /* 与按钮宽度一致 */
             box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-            margin-top: auto;
+            margin-top: 1rem;
             margin-bottom: auto;
         }
         .result-display .label {
@@ -96,7 +96,7 @@
             color: #666;
         }
         .result-display .bignum {
-            font-size: 7rem;
+            font-size: 8rem;
             font-weight: 900;
             margin: 0.3rem 0;
             color: #111;
@@ -113,7 +113,7 @@
         }
 
         @media (max-width: 360px) {
-            .result-display .bignum { font-size: 6rem; }
+            .result-display .bignum { font-size: 6.5rem; }
         }
     </style>
 </head>
@@ -128,10 +128,8 @@
     </div>
 </div>
 
-<div class="button-group">
-    <button id="generateBtn" class="btn" type="button">生成随机数</button>
-    <button id="resetBtn" class="btn secondary" type="button">重新开始</button>
-</div>
+<!-- 生成随机数按钮 -->
+<button id="generateBtn" class="btn" type="button">生成随机数</button>
 
 <div id="counter">点击次数: 0</div>
 
@@ -141,6 +139,9 @@
     <div class="initial-message">点击按钮生成数字</div>
     <div id="bigNum" class="bignum" style="display: none;"></div>
 </div>
+
+<!-- 重新开始按钮放到最下方 -->
+<button id="resetBtn" class="btn secondary" type="button">重新开始</button>
 
 <script>
     (function(){
