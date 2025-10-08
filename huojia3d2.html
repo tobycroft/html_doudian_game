@@ -156,6 +156,19 @@
     const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 2000);
     camera.position.set(0, 6, 15);
 
+    // 保存相机初始位置和目标，用于视角恢复
+    const cameraInitialPos = new THREE.Vector3().copy(camera.position);
+    const cameraInitialTarget = new THREE.Vector3(0, 2, 0);
+
+    // 相机动画相关变量
+    let cameraAnimating = false;
+    let cameraStartPos = new THREE.Vector3();
+    let cameraTargetPos = new THREE.Vector3();
+    let cameraStartTarget = new THREE.Vector3();
+    let cameraTargetTarget = new THREE.Vector3();
+    let cameraAnimationTime = 0;
+    let cameraAnimationDuration = 800; // 相机动画持续时间(ms)
+
     const controls = new THREE.OrbitControls(camera, canvas);
     controls.enableRotate = false;
     controls.enablePan = true;
@@ -348,13 +361,57 @@
         });
     });
 
+    /* ---------- 相机动画函数 ---------- */
+    function startCameraAnimation(targetPos, targetTarget) {
+        // 记录动画开始时的相机位置和目标
+        cameraStartPos.copy(camera.position);
+        cameraStartTarget.copy(controls.target);
+
+        // 设置动画目标位置和目标
+        cameraTargetPos.copy(targetPos);
+        cameraTargetTarget.copy(targetTarget);
+
+        // 开始动画
+        cameraAnimationTime = 0;
+        cameraAnimating = true;
+
+        // 禁用控制器，防止动画过程中用户操作
+        controls.enabled = false;
+    }
+
+    function updateCameraAnimation(deltaTime) {
+        if (!cameraAnimating) return;
+
+        // 更新动画时间
+        cameraAnimationTime += deltaTime;
+        const progress = Math.min(cameraAnimationTime / cameraAnimationDuration, 1);
+
+        // 使用缓动函数使动画更自然
+        const easeProgress = progress < 0.5
+            ? 4 * progress * progress * progress
+            : 1 - Math.pow(-2 * progress + 2, 3) / 2;
+
+        // 平滑过渡相机位置
+        camera.position.lerpVectors(cameraStartPos, cameraTargetPos, easeProgress);
+
+        // 平滑过渡相机目标
+        controls.target.lerpVectors(cameraStartTarget, cameraTargetTarget, easeProgress);
+        controls.update();
+
+        // 动画结束
+        if (progress >= 1) {
+            cameraAnimating = false;
+            controls.enabled = true;
+        }
+    }
+
     /* ---------- 交互逻辑 ---------- */
     const raycaster = new THREE.Raycaster();
     const pointer = new THREE.Vector2();
     let clickState = { animating: false };
 
     function onPointerDown(event) {
-        if (popup.classList.contains('show')) {
+        if (popup.classList.contains('show') || cameraAnimating) {
             return;
         }
 
@@ -379,7 +436,7 @@
     }
 
     function handleBoxClick(box, forceState = null) {
-        if (clickState.animating) return;
+        if (clickState.animating || cameraAnimating) return;
         clickState.animating = true;
 
         const data = box.userData.data;
@@ -388,8 +445,31 @@
 
         if (targetOpen) {
             currentOpenBox = box;
+
+            // 计算相机目标位置 - 盒子前方4个单位，略高于盒子
+            const boxPos = new THREE.Vector3();
+            box.getWorldPosition(boxPos);
+
+            // 相机位置：盒子前方，稍微偏移一点以获得更好视角
+            const cameraTargetPos = new THREE.Vector3(
+                boxPos.x,
+                boxPos.y + 1,  // 略高于盒子
+                boxPos.z + 6   // 在盒子前方
+            );
+
+            // 相机目标点：盒子中心
+            const cameraLookAt = new THREE.Vector3(
+                boxPos.x,
+                boxPos.y,
+                boxPos.z
+            );
+
+            // 开始相机移动动画
+            startCameraAnimation(cameraTargetPos, cameraLookAt);
         } else {
             currentOpenBox = null;
+            // 相机返回初始位置
+            startCameraAnimation(cameraInitialPos, cameraInitialTarget);
         }
 
         const startRotation = parts.lidPivot.rotation.x;
@@ -445,6 +525,8 @@
             currentOpenBox.userData.data.confirmed = true;
         }
         popup.classList.remove('show');
+        // 相机返回初始位置
+        startCameraAnimation(cameraInitialPos, cameraInitialTarget);
         currentOpenBox = null;
     });
 
@@ -480,13 +562,21 @@
         }
     }
 
-    function render() {
+    let lastTime = 0;
+    function render(currentTime) {
+        // 计算时间差用于动画
+        const deltaTime = currentTime - (lastTime || currentTime);
+        lastTime = currentTime;
+
+        // 更新相机动画
+        updateCameraAnimation(deltaTime);
+
         resizeRenderer();
         renderer.render(scene, camera);
         requestAnimationFrame(render);
     }
 
-    render();
+    requestAnimationFrame(render);
 
     window.addEventListener('pointerdown', onPointerDown);
     window.addEventListener('resize', resizeRenderer);
