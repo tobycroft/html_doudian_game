@@ -152,13 +152,13 @@
     ]);
     scene.background = skyboxTexture;
 
-    // 调整相机位置
+    // 调整相机位置 (略微提高以适应增高的货架)
     const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 2000);
-    camera.position.set(0, 6, 15);
+    camera.position.set(0, 7, 16);  // 相机位置提高一点
 
     // 保存相机初始位置和目标，用于视角恢复
     const cameraInitialPos = new THREE.Vector3().copy(camera.position);
-    const cameraInitialTarget = new THREE.Vector3(0, 2, 0);
+    const cameraInitialTarget = new THREE.Vector3(0, 3, 0);  // 目标点也提高一点
 
     // 相机动画相关变量
     let cameraAnimating = false;
@@ -175,7 +175,7 @@
     controls.screenSpacePanning = true;
     controls.enableZoom = true;
     controls.panSpeed = 0.5;
-    controls.target.set(0, 2, 0);
+    controls.target.set(0, 3, 0);  // 控制器目标点提高
     controls.update();
 
     // 光照设置
@@ -183,11 +183,11 @@
     scene.add(ambientLight);
 
     const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-    directionalLight.position.set(10, 20, 10);
+    directionalLight.position.set(10, 22, 10);  // 灯光位置提高，适应更高的货架
     directionalLight.castShadow = true;
     directionalLight.shadow.mapSize.set(2048, 2048);
     directionalLight.shadow.camera.near = 1;
-    directionalLight.shadow.camera.far = 50;
+    directionalLight.shadow.camera.far = 60;  // 阴影范围扩大
     scene.add(directionalLight);
 
     // 创建草地地面
@@ -215,7 +215,7 @@
         shelfWidth: 14,
         shelfDepth: 4,
         shelfThickness: 0.25,
-        shelfSpacing: 3,
+        shelfSpacing: 3.8,  // 增加层间距，从3调整为3.8，解决盖子穿模问题
         boxSize: {x: 2, y: 2, z: 2},
         boxPaddingX: 0.5
     };
@@ -223,6 +223,7 @@
     // 构建货架
     function buildShelf(levelCount) {
         const poleW = 0.3;
+        // 支柱高度会自动适应层间距的变化
         const poleGeometry = new THREE.BoxGeometry(poleW, levelCount * shelf.shelfSpacing + 0.5, poleW);
         const poleMaterial = new THREE.MeshStandardMaterial({color: 0x8b4513});
 
@@ -233,7 +234,7 @@
         scene.add(leftPole, rightPole);
 
         for(let i = 0; i < levelCount; i++) {
-            const yPos = i * shelf.shelfSpacing + 0.5;
+            const yPos = i * shelf.shelfSpacing + 0.5;  // 每层高度随层间距增加而提高
             const shelfGeometry = new THREE.BoxGeometry(shelf.shelfWidth, shelf.shelfThickness, shelf.shelfDepth);
             const shelfMaterial = new THREE.MeshStandardMaterial({color: 0xcd853f});
             const shelfMesh = new THREE.Mesh(shelfGeometry, shelfMaterial);
@@ -297,6 +298,7 @@
 
         const totalWidth = count * shelf.boxSize.x + (count - 1) * shelf.boxPaddingX;
         const startX = -totalWidth / 2 + shelf.boxSize.x / 2;
+        // 盒子y坐标随层间距增加而提高，确保在架子上的位置合适
         const yPos = layerIndex * shelf.shelfSpacing + 0.5 + shelf.shelfThickness + shelf.boxSize.y / 2;
 
         slotKeys.forEach((slotKey, i) => {
@@ -446,7 +448,7 @@
         if (targetOpen) {
             currentOpenBox = box;
 
-            // 计算相机目标位置 - 盒子前方4个单位，略高于盒子
+            // 计算相机目标位置 - 适应增高的盒子位置
             const boxPos = new THREE.Vector3();
             box.getWorldPosition(boxPos);
 
