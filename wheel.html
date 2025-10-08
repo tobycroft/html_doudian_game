@@ -41,19 +41,21 @@
             align-items: center;
             gap: 0.6rem;
             background: white;
-            padding: 0.45rem 0.6rem;
+            padding: 0.6rem 0.8rem; /* 增加内边距 */
             border-radius: 0.7rem;
             box-shadow: 0 2px 6px rgba(0,0,0,0.06);
             border: 1px solid rgba(0,0,0,0.06);
         }
         .seg-control label {
-            font-size: 1rem;
+            font-size: 1.3rem; /* 放大标签文字 */
+            font-weight: 600; /* 加粗标签 */
             user-select: none;
         }
         .seg-control input[type="number"] {
-            width: 4.2rem;
-            padding: 0.35rem 0.5rem;
-            font-size: 1rem;
+            width: 5.5rem; /* 加宽输入框 */
+            padding: 0.5rem 0.7rem; /* 增加内边距 */
+            font-size: 1.3rem; /* 放大输入框文字 */
+            font-weight: 600; /* 输入框文字加粗 */
             border-radius: 0.45rem;
             border: 1px solid #ddd;
             text-align: center;
@@ -76,11 +78,17 @@
             font-size: 1rem;
             cursor: pointer;
             box-shadow: 0 2px 6px rgba(37,99,235,0.18);
-            width: 80%;
+            /* 转动按钮宽度设为85% */
+            width: 85%;
+            /* 高度提高2倍（通过增加内边距实现） */
+            padding-top: 1rem;
+            padding-bottom: 1rem;
         }
         .btn.secondary {
             background: #ef4444;
             box-shadow: 0 2px 6px rgba(239,68,68,0.18);
+            /* 重置按钮宽度设为85% */
+            width: 85%;
         }
 
         /* 轮盘容器、指针（arrow） */
