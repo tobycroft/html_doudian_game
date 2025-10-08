@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <title>随机数字展示器</title>
+    <style>
+        :root { font-size: 16px; }
+        body {
+            margin: 0;
+            padding: 0.8rem;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+            background: #fafafa;
+            color: #111;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+        h1 { margin: 0.2rem 0 1.2rem; font-size: 1.6rem; font-weight: 700; }
+
+        .controls {
+            display: flex;
+            gap: 0.6rem;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 1rem;
+            width: 100%;
+            max-width: 500px;
+        }
+        .seg-control {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            background: white;
+            padding: 0.45rem 0.6rem;
+            border-radius: 0.7rem;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+            border: 1px solid rgba(0,0,0,0.06);
+            flex: 1;
+        }
+        .seg-control label { font-size: 1rem; user-select: none; }
+        .seg-control input[type="number"] {
+            width: 4.2rem;
+            padding: 0.35rem 0.5rem;
+            font-size: 1rem;
+            border-radius: 0.45rem;
+            border: 1px solid #ddd;
+            text-align: center;
+            -webkit-appearance: none;
+            appearance: none;
+            background: #fff;
+        }
+
+        .btn {
+            background: #2563eb;
+            color: #fff;
+            border: none;
+            border-radius: 0.6rem;
+            padding: 0.5rem 0.9rem;
+            font-size: 1rem;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(37,99,235,0.18);
+            flex: 1;
+            min-width: 120px;
+        }
+        .btn.secondary {
+            background: #ef4444;
+            box-shadow: 0 2px 6px rgba(239,68,68,0.18);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 0.6rem;
+            width: 100%;
+            max-width: 500px;
+            margin-bottom: 1rem;
+        }
+
+        #counter { margin-bottom: 1.5rem; font-size: 1rem; color: #333; }
+
+        /* 结果显示区域 - 直接显示在页面下方 */
+        .result-display {
+            margin-top: 1.5rem;
+            background: #fff;
+            padding: 2rem 1.4rem;
+            border-radius: 1rem;
+            text-align: center;
+            width: min(90vw, 500px);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            border: 1px solid rgba(0,0,0,0.06);
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        .result-display .label { font-size: 1.25rem; margin-bottom: 1rem; color: #444; }
+        .result-display .bignum {
+            font-size: 8rem;
+            font-weight: 900;
+            margin: 0.8rem 0;
+            color: #111;
+            letter-spacing: 0.02em;
+            transition: transform 0.3s ease;
+        }
+        .result-display .bignum:hover {
+            transform: scale(1.05);
+        }
+        .initial-message {
+            color: #888;
+            font-size: 1.1rem;
+            padding: 1rem;
+        }
+
+        @media (max-width: 420px) {
+            :root { font-size: 15px; }
+            .result-display .bignum { font-size: 6rem; }
+            .controls, .button-group {
+                flex-direction: column;
+            }
+            .seg-control, .btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<h1>随机数字展示器</h1>
+
+<div class="controls">
+    <div class="seg-control">
+        <label for="maxNumInput">最大数字</label>
+        <input id="maxNumInput" type="number" min="1" max="999" value="10" inputmode="numeric" pattern="[0-9]*" />
+    </div>
+</div>
+
+<div class="button-group">
+    <button id="generateBtn" class="btn" type="button">生成随机数</button>
+    <button id="resetBtn" class="btn secondary" type="button">重新开始</button>
+</div>
+
+<div id="counter">点击次数: 0</div>
+
+<!-- 结果直接显示在页面下方 -->
+<div id="resultDisplay" class="result-display">
+    <div class="label">生成结果：</div>
+    <div class="initial-message">点击上方按钮生成随机数字</div>
+    <div id="bigNum" class="bignum" style="display: none;"></div>
+</div>
+
+<script>
+    (function(){
+        const generateBtn = document.getElementById('generateBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const maxInput = document.getElementById('maxNumInput');
+        const counterEl = document.getElementById('counter');
+        const resultDisplay = document.getElementById('resultDisplay');
+        const bigNumEl = document.getElementById('bigNum');
+        const initialMessage = document.querySelector('.initial-message');
+
+        let clickCount = 0;
+        let lastResult = null;
+
+        function showResult(num) {
+            // 隐藏初始消息，显示数字
+            initialMessage.style.display = 'none';
+            bigNumEl.style.display = 'block';
+
+            // 添加数字变化动画效果
+            bigNumEl.style.opacity = '0';
+            setTimeout(() => {
+                bigNumEl.textContent = num;
+                bigNumEl.style.opacity = '1';
+            }, 200);
+        }
+
+        generateBtn.addEventListener('click', () => {
+            const max = Math.max(1, parseInt(maxInput.value) || 10);
+            const num = Math.floor(Math.random() * max) + 1;
+            lastResult = num;
+
+            clickCount++;
+            counterEl.textContent = `点击次数: ${clickCount}`;
+
+            showResult(num);
+        });
+
+        resetBtn.addEventListener('click', () => {
+            clickCount = 0;
+            counterEl.textContent = '点击次数: 0';
+            lastResult = null;
+
+            // 重置显示状态
+            bigNumEl.style.display = 'none';
+            initialMessage.style.display = 'block';
+        });
+
+        // 点击数字再次生成新的随机数
+        bigNumEl.addEventListener('click', () => {
+            generateBtn.click();
+        });
+    })();
+</script>
+
+</body>
+</html>
