@@ -206,13 +206,20 @@
         generateBtn.addEventListener('click', () => {
             const max = Math.max(1, parseInt(maxInput.value) || 15);
             const num = Math.floor(Math.random() * max) + 1;
-
+            let out = 0;
+            if (rst > 0) {
+                if (max === 8) {
+                    out = Math.floor(Math.random() * 7) + 1;
+                } else {
+                    out = num
+                }
+            }
             // console.log(max)
 
             clickCount++;
             counterEl.textContent = `点击次数: ${clickCount}`;
 
-            showResult(num);
+            showResult(out);
         });
 
         resetBtn.addEventListener('click', () => {
