@@ -19,7 +19,7 @@
             box-sizing: border-box;
             padding-bottom: 80px; /* 为底部按钮留出空间 */
         }
-        h1 { margin: 0.5rem 0 1.5rem; font-size: 1.5rem; font-weight: 700; text-align: center; }
+        h1 { margin: 0.5rem 0 1.5rem; font-size: 1.6rem; font-weight: 800; text-align: center; }
 
         .controls {
             display: flex;
@@ -34,17 +34,23 @@
             align-items: center;
             gap: 0.6rem;
             background: white;
-            padding: 0.5rem 0.8rem;
+            padding: 0.6rem 0.9rem;
             border-radius: 0.7rem;
             box-shadow: 0 2px 6px rgba(0,0,0,0.06);
             border: 1px solid rgba(0,0,0,0.06);
             width: 100%;
         }
-        .seg-control label { font-size: 1rem; user-select: none; flex: 1; }
+        .seg-control label {
+            font-size: 1.2rem;
+            user-select: none;
+            flex: 1;
+            font-weight: 700; /* 加粗标签 */
+        }
         .seg-control input[type="number"] {
             width: 6rem;
-            padding: 0.4rem;
-            font-size: 1rem;
+            padding: 0.5rem;
+            font-size: 1.2rem; /* 增大输入框字体 */
+            font-weight: 700; /* 加粗输入框内容 */
             border-radius: 0.45rem;
             border: 1px solid #ddd;
             text-align: center;
@@ -74,7 +80,8 @@
 
         #counter {
             margin: 1.5rem 0;
-            font-size: 1rem;
+            font-size: 1.3rem; /* 增大点击次数字体 */
+            font-weight: 700; /* 加粗点击次数 */
             color: #333;
             text-align: center;
         }
@@ -91,9 +98,10 @@
             margin-bottom: auto;
         }
         .result-display .label {
-            font-size: 1rem;
+            font-size: 1.1rem;
             margin-bottom: 0.5rem;
             color: #666;
+            font-weight: 600;
         }
         .result-display .bignum {
             font-size: 8rem;
@@ -108,12 +116,18 @@
         }
         .initial-message {
             color: #888;
-            font-size: 1rem;
+            font-size: 1.1rem;
             padding: 1rem 0;
         }
 
         @media (max-width: 360px) {
             .result-display .bignum { font-size: 6.5rem; }
+            .seg-control label, .seg-control input[type="number"] {
+                font-size: 1.1rem;
+            }
+            #counter {
+                font-size: 1.2rem;
+            }
         }
     </style>
 </head>
