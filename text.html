@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="utf-8" />
+    <title>Three.js 随机数展示场景</title>
+    <style>
+        body { margin: 0; overflow: hidden; background: #000; }
+        canvas { display: block; }
+    </style>
+</head>
+<body>
+<script src="https://cdn.jsdelivr.net/npm/three/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three/examples/jsm/loaders/FontLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three/examples/jsm/geometries/TextGeometry.js"></script>
+
+<script>
+    let scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x000000);
+
+    let camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera.position.set(0, 0, 30);
+
+    let renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    let controls = new THREE.OrbitControls(camera, renderer.domElement);
+
+    // 灯光
+    let ambient = new THREE.AmbientLight(0xffffff, 0.6);
+    scene.add(ambient);
+    let dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    dirLight.position.set(10, 10, 10);
+    scene.add(dirLight);
+
+    // 随机数字对象列表
+    let texts = [];
+
+    // 加载字体
+    const loader = new THREE.FontLoader();
+    loader.load('https://cdn.jsdelivr.net/npm/three/examples/fonts/helvetiker_regular.typeface.json', (font) => {
+        function createRandomNumber() {
+            const value = (Math.random() * 100).toFixed(2);
+            const geometry = new THREE.TextGeometry(value, {
+                font: font,
+                size: 1,
+                height: 0.2,
+                curveSegments: 8
+            });
+            const material = new THREE.MeshStandardMaterial({
+                color: new THREE.Color(Math.random(), Math.random(), Math.random()),
+                transparent: true,
+                opacity: 1
+            });
+            const mesh = new THREE.Mesh(geometry, material);
+
+            mesh.position.set(
+                (Math.random() - 0.5) * 20,
+                (Math.random() - 0.5) * 10,
+                (Math.random() - 0.5) * 10
+            );
+            mesh.rotation.y = Math.random() * Math.PI;
+            scene.add(mesh);
+            texts.push({ mesh, life: 1.5 }); // 存活时间1.5秒
+        }
+
+        setInterval(createRandomNumber, 1000);
+    });
+
+    // 动画循环
+    function animate() {
+        requestAnimationFrame(animate);
+
+        // 淡出与清理旧数字
+        texts.forEach((t, i) => {
+            t.mesh.material.opacity -= 0.01;
+            t.mesh.position.y += 0.02;
+            if (t.mesh.material.opacity <= 0) {
+                scene.remove(t.mesh);
+                texts.splice(i, 1);
+            }
+        });
+
+        controls.update();
+        renderer.render(scene, camera);
+    }
+
+    animate();
+
+    window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+</script>
+</body>
+</html>
