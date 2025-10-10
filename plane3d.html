@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <title>多人自行车模型</title>
+    <style>
+        body { margin:0; }
+        canvas { display:block; }
+    </style>
+</head>
+<body>
+
+<script src="https://cdn.jsdelivr.net/npm/three/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three/examples/js/controls/OrbitControls.js"></script>
+
+<script>
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0xa0e0ff);
+
+    const camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 1000);
+    camera.position.set(10, 5, 15);
+
+    const renderer = new THREE.WebGLRenderer({antialias:true});
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+
+    // 光源
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+    scene.add(ambientLight);
+
+    const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    dirLight.position.set(10, 10, 10);
+    scene.add(dirLight);
+
+    // 创建车轮
+    function createWheel(radius=1, width=0.2, color=0x333333){
+        const geometry = new THREE.CylinderGeometry(radius, radius, width, 32);
+        const material = new THREE.MeshStandardMaterial({color});
+        const wheel = new THREE.Mesh(geometry, material);
+        wheel.rotation.z = Math.PI/2;
+        return wheel;
+    }
+
+    // 创建座椅
+    function createSeat(){
+        const geometry = new THREE.BoxGeometry(0.5,0.1,0.3);
+        const material = new THREE.MeshStandardMaterial({color:0x550000});
+        return new THREE.Mesh(geometry, material);
+    }
+
+    // 创建把手
+    function createHandle(){
+        const geometry = new THREE.BoxGeometry(0.1,0.1,1);
+        const material = new THREE.MeshStandardMaterial({color:0x222222});
+        return new THREE.Mesh(geometry, material);
+    }
+
+    // 创建车架（简化）
+    function createFrame(){
+        const material = new THREE.MeshStandardMaterial({color:0xff0000});
+        const group = new THREE.Group();
+
+        const bar1 = new THREE.Mesh(new THREE.BoxGeometry(4,0.1,0.1), material);
+        bar1.position.set(2,1,0);
+        group.add(bar1);
+
+        const bar2 = new THREE.Mesh(new THREE.BoxGeometry(0.1,1,0.1), material);
+        bar2.position.set(0,0.5,0);
+        group.add(bar2);
+
+        const bar3 = new THREE.Mesh(new THREE.BoxGeometry(2,0.1,0.1), material);
+        bar3.position.set(1,0.8,0);
+        group.add(bar3);
+
+        return group;
+    }
+
+    // 组装双人车
+    function createTandemBike(){
+        const bike = new THREE.Group();
+
+        // 轮子
+        const wheel1 = createWheel(); wheel1.position.set(0,0,0); bike.add(wheel1);
+        const wheel2 = createWheel(); wheel2.position.set(4,0,0); bike.add(wheel2);
+
+        const wheel3 = createWheel(); wheel3.position.set(6,0,0); bike.add(wheel3);
+        const wheel4 = createWheel(); wheel4.position.set(10,0,0); bike.add(wheel4);
+
+        // 座椅
+        const seat1 = createSeat(); seat1.position.set(1,1,0); bike.add(seat1);
+        const seat2 = createSeat(); seat2.position.set(5,1,0); bike.add(seat2);
+
+        // 把手
+        const handle1 = createHandle(); handle1.position.set(0,1,0); bike.add(handle1);
+        const handle2 = createHandle(); handle2.position.set(4,1,0); bike.add(handle2);
+
+        // 车架
+        const frame = createFrame();
+        bike.add(frame);
+
+        return bike;
+    }
+
+    const tandemBike = createTandemBike();
+    scene.add(tandemBike);
+
+    // 动画
+    function animate(){
+        requestAnimationFrame(animate);
+        tandemBike.rotation.y += 0.001;
+        controls.update();
+        renderer.render(scene, camera);
+    }
+    animate();
+
+    window.addEventListener('resize', ()=>{
+        camera.aspect = window.innerWidth/window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+</script>
+
+</body>
+</html>

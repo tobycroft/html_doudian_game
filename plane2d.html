@@ -1,0 +1,331 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=yes" />
+    <title>俯视飞机机舱（WebGL / Three.js）</title>
+    <style>
+        html,body{height:100%;margin:0;font-family:system-ui, -apple-system, 'Segoe UI', Roboto, 'Noto Sans CJK SC', 'Microsoft YaHei', sans-serif}
+        #app{width:100vw;height:100vh;display:flex;align-items:center;justify-content:center;background:#87c1ff}
+        #canvas-wrap{width:100%;height:100%;position:relative;overflow:hidden}
+        canvas{display:block}
+
+        /* HUD */
+        .hud{position:absolute;left:16px;top:16px;display:flex;gap:8px;z-index:5}
+        .btn{background:#fff;border-radius:8px;padding:8px 12px;box-shadow:0 6px 18px rgba(0,0,0,.12);border:0;font-weight:700}
+
+        /* 区域图例 */
+        .legend{position:absolute;right:16px;top:16px;background:rgba(255,255,255,.95);padding:10px;border-radius:8px;box-shadow:0 6px 18px rgba(0,0,0,.12);z-index:5}
+        .legend h4{margin:0 0 6px 0;font-size:14px}
+        .legend div{font-size:13px;margin:4px 0}
+
+        /* 弹窗卡片 */
+        .modal{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);min-width:260px;background:#fff;border-radius:12px;padding:14px;box-shadow:0 20px 60px rgba(0,0,0,.28);z-index:10;display:none}
+        .modal h3{margin:0 0 8px 0}
+        .modal p{margin:0 0 12px 0}
+        .modal .actions{display:flex;gap:8px;justify-content:flex-end}
+
+        /* 横屏提示 */
+        .landscape-hint{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.6);color:#fff;font-size:18px;z-index:9999}
+        @media (orientation:portrait){.landscape-hint{display:flex}}
+    </style>
+</head>
+<body>
+<div id="app">
+    <div id="canvas-wrap"></div>
+    <div class="hud">
+        <button class="btn" id="resetView">重置视图</button>
+        <button class="btn" id="randomOpen">随机开盒</button>
+    </div>
+    <div class="legend">
+        <h4>机舱分区</h4>
+        <div>驾驶舱：Cockpit</div>
+        <div>头等舱：First</div>
+        <div>商务舱：Business</div>
+        <div>经济舱：Economy</div>
+        <div>厕所：Lavatory</div>
+    </div>
+
+    <div class="modal" id="modal">
+        <h3 id="modal-title">盲盒</h3>
+        <p id="modal-body">内容预览</p>
+        <div class="actions">
+            <button class="btn" id="closeBtn">关闭</button>
+            <button class="btn" id="openBtn">开盒</button>
+        </div>
+    </div>
+</div>
+<div class="landscape-hint">请横屏查看以获得最佳体验 ↔️</div>
+
+<!-- 使用 CDN 的 Three.js（兼容全局 THREE）以及 OrbitControls 简单交互 -->
+<script src="https://cdn.jsdelivr.net/npm/three/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three/examples/js/controls/OrbitControls.js"></script>
+
+<script>
+    // 基于 Three.js 的俯视飞机机舱示意（简化写实风格）
+    (() => {
+        const wrap = document.getElementById('canvas-wrap');
+        const modal = document.getElementById('modal');
+        const modalTitle = document.getElementById('modal-title');
+        const modalBody = document.getElementById('modal-body');
+        const closeBtn = document.getElementById('closeBtn');
+        const openBtn = document.getElementById('openBtn');
+
+        const scene = new THREE.Scene();
+        const width = wrap.clientWidth;
+        const height = wrap.clientHeight;
+
+        // 正交相机（俯视）
+        const aspect = width / height;
+        const frustumSize = 1200;
+        const camera = new THREE.OrthographicCamera(
+            frustumSize * aspect / -2,
+            frustumSize * aspect / 2,
+            frustumSize / 2,
+            frustumSize / -2,
+            0.1,
+            5000
+        );
+        camera.position.set(0, 600, 0); // 从上方向下看
+        camera.lookAt(0,0,0);
+
+        const renderer = new THREE.WebGLRenderer({antialias:true,alpha:true});
+        renderer.setPixelRatio(window.devicePixelRatio||1);
+        renderer.setSize(width,height);
+        renderer.domElement.style.touchAction = 'none';
+        wrap.appendChild(renderer.domElement);
+
+        // controls — 限制为平移/缩放
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableRotate = false; // 禁止旋转，保持俯视
+        controls.screenSpacePanning = true;
+        controls.zoomSpeed = 1.2;
+        controls.minZoom = 0.5;
+        controls.maxZoom = 4;
+        controls.enablePan = true;
+        controls.target.set(0,0,0);
+        controls.update();
+
+        // 光照（平面看起来更均匀）
+        scene.add(new THREE.AmbientLight(0xffffff, 0.95));
+
+        // 跑道（使用大平面 + 滚动纹理模拟前进感）
+        const runwayTex = new THREE.TextureLoader().load('https://i.imgur.com/3sKX6kW.jpg'); // 占位：简易跑道贴图
+        runwayTex.wrapS = runwayTex.wrapT = THREE.RepeatWrapping;
+        runwayTex.repeat.set(1,6);
+        const runwayMat = new THREE.MeshBasicMaterial({map:runwayTex});
+        const runwayGeo = new THREE.PlaneGeometry(1800,2400);
+        const runway = new THREE.Mesh(runwayGeo, runwayMat);
+        runway.rotation.x = -Math.PI/2;
+        runway.position.y = -1; // 轻微低于飞机层
+        scene.add(runway);
+
+        // 飞机机身（俯视长条）
+        const bodyGroup = new THREE.Group();
+        scene.add(bodyGroup);
+
+        // 机身主体
+        const fuselageGeo = new THREE.BoxGeometry(900, 20, 220);
+        const fuselageMat = new THREE.MeshPhongMaterial({color:0xf7f9fb, shininess:10});
+        const fuselage = new THREE.Mesh(fuselageGeo, fuselageMat);
+        fuselage.position.y = 0;
+        bodyGroup.add(fuselage);
+
+        // 机头与机尾（微调形状表现）
+        const noseGeo = new THREE.ConeGeometry(60,120,16);
+        const nose = new THREE.Mesh(noseGeo, fuselageMat);
+        nose.rotation.z = Math.PI/2;
+        nose.rotation.x = Math.PI/2;
+        nose.position.set(-480,0,0);
+        bodyGroup.add(nose);
+
+        const tailGeo = new THREE.ConeGeometry(40,100,12);
+        const tail = new THREE.Mesh(tailGeo, fuselageMat);
+        tail.rotation.z = -Math.PI/2;
+        tail.rotation.x = Math.PI/2;
+        tail.position.set(480,0,0);
+        bodyGroup.add(tail);
+
+        // 机翼（左右）
+        const wingGeo = new THREE.BoxGeometry(540,6,120);
+        const wingMat = new THREE.MeshPhongMaterial({color:0xeaf6ff});
+        const wingL = new THREE.Mesh(wingGeo, wingMat);
+        wingL.position.set(0,0,-200);
+        wingL.rotation.y = Math.PI/12;
+        bodyGroup.add(wingL);
+        const wingR = wingL.clone(); wingR.position.set(0,0,200); wingR.rotation.y = -Math.PI/12; bodyGroup.add(wingR);
+
+        // 垂直尾翼—简单矩形
+        const vtailGeo = new THREE.BoxGeometry(12,140,80);
+        const vtail = new THREE.Mesh(vtailGeo, wingMat);
+        vtail.position.set(450,60,0);
+        vtail.rotation.z = Math.PI/12;
+        bodyGroup.add(vtail);
+
+        // 舱区边界（从左到右：cockpit, first, business, economy, lav）
+        const cabinDefs = [
+            {name:'cockpit', width:110,color:0xcfeafc,label:'驾驶舱'},
+            {name:'first', width:160,color:0xdff7ff,label:'头等舱'},
+            {name:'business', width:260,color:0xecf9ff,label:'商务舱'},
+            {name:'economy', width:320,color:0xf7fbff,label:'经济舱'},
+            {name:'lav', width:40,color:0xf2f6f9,label:'厕所'}
+        ];
+
+        // 将舱区映射到机身表面：以机身中心 x 为 0，向左为负
+        let xCursor = -420; // start near nose
+        const cabinMeshes = [];
+        const boxes = []; // 存放盲盒对象
+
+        function makeLabel(text,x,z){
+            const canvas = document.createElement('canvas'); canvas.width=512; canvas.height=128; const ctx=canvas.getContext('2d');
+            ctx.fillStyle='rgba(0,0,0,0)'; ctx.fillRect(0,0,512,128);
+            ctx.font='36px sans-serif'; ctx.fillStyle='#104a6b'; ctx.textAlign='center'; ctx.textBaseline='middle';
+            ctx.fillText(text,256,64);
+            const tex = new THREE.CanvasTexture(canvas); tex.needsUpdate=true;
+            const sprite = new THREE.Sprite(new THREE.SpriteMaterial({map:tex,transparent:true}));
+            sprite.position.set(x,12,z);
+            sprite.scale.set(180,40,1);
+            scene.add(sprite);
+            return sprite;
+        }
+
+        cabinDefs.forEach(def=>{
+            const w = def.width;
+            // 区域表示（透明平面覆盖机身上方以便放置盒子）
+            const planeGeo = new THREE.PlaneGeometry(w,160);
+            const planeMat = new THREE.MeshBasicMaterial({color:def.color,transparent:true,opacity:0.35});
+            const plane = new THREE.Mesh(planeGeo,planeMat);
+            plane.rotation.x = -Math.PI/2;
+            plane.position.set(xCursor + w/2, 6, 0);
+            scene.add(plane);
+            cabinMeshes.push({mesh:plane,def,centerX:plane.position.x});
+
+            // label
+            makeLabel(def.label, plane.position.x, -100);
+
+            // 在每个舱位内部放较大盲盒（考虑显示中文文字）
+            // 计算列数和行数，间距自适应
+            const columns = Math.max(1, Math.floor(w/90));
+            const rows = 2; // 固定2行以保证盲盒够大
+            const spacingX = w / (columns+1);
+            const spacingZ = 60;
+            for(let r=0;r<rows;r++){
+                for(let c=0;c<columns;c++){
+                    const bx = plane.position.x - w/2 + spacingX*(c+1);
+                    const bz = -30 + (r-0.5)*spacingZ;
+                    const boxMesh = createBoxMesh(def.name + '-' + r + '-' + c, (def.label + '盒子'+(c+1)), bx, 12, bz);
+                    boxes.push(boxMesh);
+                }
+            }
+
+            xCursor += w + 8; // small gap
+        });
+
+        // 创建一个带文字的盲盒（使用 Canvas 纹理以便清晰中文）
+        function createBoxMesh(id, label, x, y, z){
+            const w = 80; const h = 80;
+            const canvas = document.createElement('canvas'); canvas.width = 256; canvas.height = 256; const ctx = canvas.getContext('2d');
+            // 背景盒子
+            ctx.fillStyle = '#ffeecf'; ctx.fillRect(0,0,256,256);
+            // 边框
+            ctx.strokeStyle = '#d8b27a'; ctx.lineWidth = 6; ctx.strokeRect(6,6,244,244);
+            // 文本（中文支持）
+            ctx.fillStyle = '#333'; ctx.font = '32px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+            const lines = String(label).split('');
+            for(let i=0;i<lines.length;i++) ctx.fillText(lines[i],128,96 + i*36);
+
+            const tex = new THREE.CanvasTexture(canvas);
+            tex.needsUpdate = true;
+            const mat = new THREE.MeshBasicMaterial({map:tex,transparent:false});
+            const geo = new THREE.PlaneGeometry(w,h);
+            const mesh = new THREE.Mesh(geo,mat);
+            mesh.position.set(x,y,z);
+            mesh.userData = {id,label,opened:false};
+            mesh.rotation.x = -Math.PI/2; // 平放在机身上
+            scene.add(mesh);
+            return mesh;
+        }
+
+        // 播放跑道移动的动画（修改纹理偏移）
+        let last = performance.now();
+        function animateRunway(now){
+            const dt = (now - last)/1000; last = now;
+            runwayTex.offset.y -= dt * 0.35; // 控制跑道移动速度
+        }
+
+        // 射线用于拾取点击
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+        function onPointerDown(e){
+            const rect = renderer.domElement.getBoundingClientRect();
+            const x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+            const y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+            mouse.set(x,y);
+            raycaster.setFromCamera(mouse,camera);
+            const intersects = raycaster.intersectObjects(boxes);
+            if(intersects.length>0){
+                const picked = intersects[0].object;
+                showModal(picked);
+            }
+        }
+        renderer.domElement.addEventListener('pointerdown', onPointerDown);
+
+        // 显示弹框
+        let activeBox = null;
+        function showModal(box){
+            activeBox = box;
+            modalTitle.textContent = box.userData.label || '盲盒';
+            modalBody.textContent = box.userData.opened ? '已打开内容：' + (box.userData.prize||'空') : '未打开';
+            modal.style.display='block';
+        }
+        closeBtn.addEventListener('click', ()=>{ modal.style.display='none'; activeBox=null; });
+        openBtn.addEventListener('click', ()=>{
+            if(!activeBox) return;
+            if(!activeBox.userData.opened){
+                // 简单随机奖励
+                const rewards = ['限量周边','兑换券','纪念章','零食礼包','电子优惠码'];
+                const prize = rewards[Math.floor(Math.random()*rewards.length)];
+                activeBox.userData.opened=true; activeBox.userData.prize=prize;
+                modalBody.textContent = '获得：' + prize;
+                // 改变盒子纹理为已开样式
+                const ctx = activeBox.material.map.image.getContext('2d');
+                ctx.fillStyle = '#e8fff0'; ctx.fillRect(0,0,256,256);
+                ctx.fillStyle = '#1a7f3b'; ctx.font='28px sans-serif'; ctx.textAlign='center'; ctx.fillText('已开',128,80);
+                ctx.fillText(prize,128,140);
+                activeBox.material.map.needsUpdate=true;
+            }
+        });
+
+        // 随机开盒按钮
+        document.getElementById('randomOpen').addEventListener('click', ()=>{
+            const candidates = boxes.filter(b=>!b.userData.opened);
+            if(candidates.length===0) return alert('没有可打开的盲盒');
+            const pick = candidates[Math.floor(Math.random()*candidates.length)];
+            showModal(pick);
+        });
+
+        // 重置视图
+        document.getElementById('resetView').addEventListener('click', ()=>{
+            controls.reset(); camera.position.set(0,600,0); camera.lookAt(0,0,0); controls.update();
+        });
+
+        // 渲染循环
+        function render(now){
+            animateRunway(now);
+            renderer.render(scene,camera);
+            requestAnimationFrame(render);
+        }
+        requestAnimationFrame(render);
+
+        // 大小自适应
+        window.addEventListener('resize', ()=>{
+            const w = wrap.clientWidth; const h = wrap.clientHeight;
+            const aspect = w/h;
+            camera.left = -frustumSize * aspect / 2; camera.right = frustumSize * aspect / 2; camera.top = frustumSize/2; camera.bottom = -frustumSize/2;
+            camera.updateProjectionMatrix(); renderer.setSize(w,h);
+        });
+
+    })();
+</script>
+</body>
+</html>
