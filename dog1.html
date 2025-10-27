@@ -138,15 +138,15 @@
                 "1SSR": { display: "SSR+1", next: {
                         "1SR": { display: "SR+1", next: null },
                         "5UR": { display: "UR+5", next: null },
-                        "4UR": { display: "UR+4", next: { "1OR及以上": { display: "OR+1及以上", next: null } } },
-                        "3UR": { display: "UR+3", next: { "2OR及以上": { display: "OR+2及以上", next: null } } },
-                        "2UR": { display: "UR+2", next: { "3OR及以上": { display: "OR+3及以上", next: null } } },
-                        "1UR": { display: "UR+1", next: { "6OR及以上": { display: "OR+6及以上", next: null } } }
+                        "4UR": { display: "UR+4", next: { "1OR及以上": { display: "OR及以上+1", next: null } } },
+                        "3UR": { display: "UR+3", next: { "2OR及以上": { display: "OR及以上+2", next: null } } },
+                        "2UR": { display: "UR+2", next: { "3OR及以上": { display: "OR及以上+3", next: null } } },
+                        "1UR": { display: "UR+1", next: { "6OR及以上": { display: "OR及以上+6", next: null } } }
                     }},
                 "2SSR": { display: "SSR+2", next: {
                         "2UR": { display: "UR+2", next: null },
                         "1UR": { display: "UR+1", next: { "2OR": { display: "OR+2", next: null } } },
-                        "2OR及以上": { display: "OR+2及以上", next: null }
+                        "2OR及以上": { display: "OR及以上+2", next: null }
                     }}
             }
         },
@@ -159,14 +159,14 @@
                         "3UR": { display: "UR+3", next: null },
                         "2UR": { display: "UR+2", next: {
                                 "3OR": { display: "OR+3", next: null },
-                                "1OR及以上": { display: "OR+1及以上", next: null },
+                                "1OR及以上": { display: "OR及以上+1", next: null },
                                 "2OR": { display: "OR+2", next: null }
                             }},
                         "1UR": { display: "UR+1", next: {
                                 "5OR": { display: "OR+5", next: null },
                                 "2OR": { display: "OR+2", next: null }
                             }},
-                        "4OR及以上": { display: "OR+4及以上", next: null }
+                        "4OR及以上": { display: "OR及以上+4", next: null }
                     }}
             }
         },
@@ -175,8 +175,8 @@
             display: "UR",
             next: {
                 "8UR": { display: "UR+8", next: null },
-                "7UR": { display: "UR+7", next: { "OR及以上": { display: "OR及以上", next: null } } },
-                "6UR": { display: "UR+6", next: { "3OR及以上": { display: "OR+3及以上", next: null } } },
+                "7UR": { display: "UR+7", next: { "OR及以上+1": { display: "OR及以上+1", next: null } } },
+                "6UR": { display: "UR+6", next: { "3OR及以上": { display: "OR及以上+3", next: null } } },
                 "5UR": { display: "UR+5", next: {
                         "1SSR": { display: "SSR+1", next: null },
                         "4OR及以上": { display: "OR+4及以上", next: null }
