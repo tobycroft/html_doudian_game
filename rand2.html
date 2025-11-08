@@ -159,7 +159,7 @@
 <div class="controls">
     <div class="seg-control">
         <label for="maxNumInput">最大数字</label>
-        <input id="maxNumInput" type="number" min="1" max="999" value="15" inputmode="numeric" pattern="[0-9]*"/>
+        <input id="maxNumInput" type="number" min="1" max="999" value="19" inputmode="numeric" pattern="[0-9]*"/>
     </div>
 </div>
 
@@ -204,7 +204,7 @@
         }
 
         generateBtn.addEventListener('click', () => {
-            const max = Math.max(1, parseInt(maxInput.value) || 15);
+            const max = Math.max(1, parseInt(maxInput.value) || 19);
             let num = Math.floor(Math.random() * max) + 1;
             if (rst > 0) {
                 if (num === 8) {
