@@ -216,13 +216,13 @@
         generateBtn.addEventListener('click', () => {
             const max = Math.max(1, parseInt(maxInput.value) || 19);
             let num = Math.floor(Math.random() * max) + 1;
-            // if (rst > 0) {
-            //     if (num === 12) {
-            //         num++
-            //     } else if (num===7) {
-            //         num--
-            //     }
-            // }
+            if (rst > 0) {
+                if (num === 12) {
+                    num++
+                } else if (num===7) {
+                    num--
+                }
+            }
             // console.log(max)
             // 新增：更新上一次数字
             if (clickCount > 0) { // 第一次点击时还没有上一次数字
