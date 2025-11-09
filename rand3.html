@@ -118,13 +118,6 @@
             font-weight: 600;
         }
 
-        .result-display .last-number {
-            font-size: 1.1rem;
-            color: #888;
-            margin-bottom: 1rem;
-            font-weight: 500;
-        }
-
         .result-display .bignum {
             font-size: 8rem;
             font-weight: 900;
@@ -178,7 +171,6 @@
 <!-- 结果显示区域 -->
 <div id="resultDisplay" class="result-display">
     <div class="label">生成结果：</div>
-    <div class="last-number">上一次数字：无</div> <!-- 新增：显示上一次数字 -->
     <div class="initial-message">点击按钮生成数字</div>
     <div id="bigNum" class="bignum" style="display: none;"></div>
 </div>
@@ -195,10 +187,8 @@
         const counterEl = document.getElementById('counter');
         const bigNumEl = document.getElementById('bigNum');
         const initialMessage = document.querySelector('.initial-message');
-        const lastNumberEl = document.querySelector('.last-number'); // 新增：获取上一次数字元素
 
         let clickCount = 0;
-        let lastNum = null; // 新增：存储上一次生成的数字
 
         function showResult(num) {
             // 隐藏初始消息，显示数字
@@ -216,12 +206,14 @@
         generateBtn.addEventListener('click', () => {
             const max = Math.max(1, parseInt(maxInput.value) || 19);
             let num = Math.floor(Math.random() * max) + 1;
-
-            // 新增：更新上一次数字
-            if (clickCount > 0) { // 第一次点击时还没有上一次数字
-                lastNum = bigNumEl.textContent;
-                lastNumberEl.textContent = `上一次数字：${lastNum}`;
+            if (rst > 0) {
+                // if (num === 8) {
+                //     num++
+                //     // } else if (num) {
+                //
+                // }
             }
+            // console.log(max)
 
             clickCount++;
             counterEl.textContent = `点击次数: ${clickCount}`;
@@ -231,10 +223,9 @@
 
         resetBtn.addEventListener('click', () => {
             rst++
+            console.log(rst)
             clickCount = 0;
-            lastNum = null; // 重置上一次数字
             counterEl.textContent = '点击次数: 0';
-            lastNumberEl.textContent = '上一次数字：无'; // 重置上一次数字显示
 
             // 重置显示状态
             bigNumEl.style.display = 'none';
