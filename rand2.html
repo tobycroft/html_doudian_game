@@ -218,9 +218,17 @@
             let num = Math.floor(Math.random() * max) + 1;
             if (rst > 0) {
                 if (num === 12) {
-                    num++
-                } else if (num===7) {
-                    num--
+                    if (bigNumEl.textContent >= num) {
+                        num++
+                    } else {
+                        num--
+                    }
+                } else if (num === 7) {
+                    if (bigNumEl.textContent >= num) {
+                        num++
+                    } else {
+                        num--
+                    }
                 }
             }
             // console.log(max)
