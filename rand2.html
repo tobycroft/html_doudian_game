@@ -217,19 +217,40 @@
             const max = Math.max(1, parseInt(maxInput.value) || 19);
             let num = Math.floor(Math.random() * max) + 1;
             if (rst > 0) {
-                if (num === 12) {
-                    if (bigNumEl.textContent >= num) {
-                        num++
-                    } else {
-                        num--
-                    }
-                } else if (num === 7) {
-                    if (bigNumEl.textContent >= num) {
-                        num++
-                    } else {
-                        num--
-                    }
+                switch (maxInput.value) {
+                    case 19:
+                        if (num === 12) {
+                            if (bigNumEl.textContent >= num) {
+                                num++
+                            } else {
+                                num--
+                            }
+                        } else if (num === 7) {
+                            if (bigNumEl.textContent >= num) {
+                                num++
+                            } else {
+                                num--
+                            }
+                        }
+                        break
+
+                    case 18:
+                        if (num === 10) {
+                            if (bigNumEl.textContent >= num) {
+                                num++
+                            } else {
+                                num--
+                            }
+                        } else if (num === 9) {
+                            if (bigNumEl.textContent >= num) {
+                                num++
+                            } else {
+                                num--
+                            }
+                        }
+                        break
                 }
+
             }
             // console.log(max)
             // 新增：更新上一次数字
