@@ -335,7 +335,7 @@
     });
     document.documentElement.addEventListener("touchend", function (event) {
         let now = (new Date()).getTime();
-        if (now - lastTouchEnd <= 300) {
+        if (now - lastTouchEnd <= 10) {
             //当两次手指弹起的时间小于300毫秒，认为双击屏幕行为
             event.preventDefault();
         } else { // 否则重新手指弹起的时间
