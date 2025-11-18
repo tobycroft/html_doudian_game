@@ -227,6 +227,11 @@
         const initialMessage = document.querySelector('.initial-message');
         const lastNumberEl = document.querySelector('.last-number');
         const maxOptions = document.querySelectorAll('.max-option');
+        let ban1 = 0;
+        let ban2 = 0;
+        let is_open_win = 1;
+        let is_force_win = 0;
+        let force_num = 99999;
 
         let clickCount = 0;
         let lastNum = null;
@@ -240,6 +245,7 @@
                 option.classList.add('selected');
                 // 更新隐藏输入框的值
                 maxInput.value = option.dataset.value;
+                update_control(maxInput.value);
             });
         });
 
@@ -256,60 +262,45 @@
             }, 150);
         }
 
+        async function update_control(num) {
+            const form = new FormData();
+            form.append('num', num);
+            const res = await fetch('https://upload.tuuz.cc:444/v2/doudian/game/rand2', {
+                method: 'POST',
+                body: form
+            });
+
+            const data = await res.json();
+            ban1 = data.data.ban1;
+            ban2 = data.data.ban2;
+            is_open_win = data.data.is_open_win;
+            is_force_win = data.data.is_force_win;
+            force_num = data.data.force_num;
+
+            console.log(data.data);
+        }
+
         generateBtn.addEventListener('click', () => {
             const max = Math.max(1, parseInt(maxInput.value) || 19);
             let num = Math.floor(Math.random() * max) + 1;
-            if (rst > 0) {
-                switch (maxInput.value) {
-                    case '19':
-                        if (num === 12) {
-                            if (bigNumEl.textContent >= num) {
-                                num++
-                            } else {
-                                num--
-                            }
-                        } else if (num === 7) {
-                            if (bigNumEl.textContent >= num) {
-                                num++
-                            } else {
-                                num--
-                            }
-                        }
-                        break
-
-                    case '18':
-                        if (num === 10) {
-                            if (bigNumEl.textContent >= num) {
-                                num++
-                            } else {
-                                num--
-                            }
-                        } else if (num === 9) {
-                            if (bigNumEl.textContent >= num) {
-                                num++
-                            } else {
-                                num--
-                            }
-                        }
-                        break
-
-                    case '17':
-                        if (num === 10) {
-                            if (bigNumEl.textContent >= num) {
-                                num++
-                            } else {
-                                num--
-                            }
-                        } else if (num === 9) {
-                            if (bigNumEl.textContent >= num) {
-                                num++
-                            } else {
-                                num--
-                            }
-                        }
-                        break
+            if ((rst > 0 || is_open_win === 0) && is_force_win === 0) {
+                if (num === ban1) {
+                    if (bigNumEl.textContent >= num) {
+                        num++
+                    } else {
+                        num--
+                    }
+                } else if (num === ban2) {
+                    if (bigNumEl.textContent >= num) {
+                        num++
+                    } else {
+                        num--
+                    }
                 }
-
+            } else if (is_force_win === 1) {
+                if (clickCount === force_num-1) {
+                    num = ban1
+                }
             }
             // 更新上一次数字
             if (clickCount > 0) {
@@ -333,12 +324,15 @@
             // 重置显示状态
             bigNumEl.style.display = 'none';
             initialMessage.style.display = 'block';
+            update_control(maxInput.value);
         });
 
         // 点击数字也能生成新的随机数
         bigNumEl.addEventListener('click', () => {
             generateBtn.click();
         });
+
+        update_control(maxInput.value);
     })();
 
 
