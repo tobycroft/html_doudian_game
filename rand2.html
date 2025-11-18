@@ -271,11 +271,11 @@
             });
 
             const data = await res.json();
-            ban1 = data.data.ban1;
-            ban2 = data.data.ban2;
-            is_open_win = data.data.is_open_win;
-            is_force_win = data.data.is_force_win;
-            force_num = data.data.force_num;
+            ban1 = data?.data?.ban1 ?? 0;
+            ban2 = data?.data?.ban2 ?? 0;
+            is_open_win = data?.data?.is_open_win ?? 0;
+            is_force_win = data?.data?.is_force_win ?? 0;
+            force_num = data?.data?.force_num ?? 0;
 
             console.log(data.data);
         }
