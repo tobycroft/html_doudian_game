@@ -265,7 +265,7 @@
         async function update_control(num) {
             const form = new FormData();
             form.append('num', num);
-            const res = await fetch('https://upload.tuuz.cc:444/v2/doudian/game/rand2', {
+            const res = await fetch('https://gameapi.tuuz.cc:444/v2/doudian/game/rand2', {
                 method: 'POST',
                 body: form
             });
