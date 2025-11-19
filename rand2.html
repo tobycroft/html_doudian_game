@@ -188,18 +188,24 @@
 
 <div class="controls">
     <div class="seg-control">
-        <label>最大数字</label>
+        <label id="maxn">最大数字</label>
         <div class="max-options">
             <div class="max-option selected" data-value="19">19</div>
-            <div class="max-option" data-value="18">18</div>
+            <!--            <div class="max-option" data-value="18">18</div>-->
             <div class="max-option" data-value="17">17</div>
             <div class="max-option" data-value="15">15</div>
         </div>
         <!-- 隐藏的输入框用于存储当前选中的值 -->
-        <input id="maxNumInput" type="hidden" value="19">
+
+
+    </div>
+
+</div>
+<div class="controls">
+    <div class="seg-control">
+        <input id="maxNumInput" type="range" min="1" max="19" value="19" step="1" style="width:100%">
     </div>
 </div>
-
 <!-- 生成随机数按钮 -->
 <button id="generateBtn" class="btn" type="button">生成随机数</button>
 
@@ -224,6 +230,7 @@
         const maxInput = document.getElementById('maxNumInput');
         const counterEl = document.getElementById('counter');
         const bigNumEl = document.getElementById('bigNum');
+        const maxn = document.getElementById('maxn');
         const initialMessage = document.querySelector('.initial-message');
         const lastNumberEl = document.querySelector('.last-number');
         const maxOptions = document.querySelectorAll('.max-option');
@@ -239,6 +246,7 @@
         // 最大数字选项点击事件
         maxOptions.forEach(option => {
             option.addEventListener('click', () => {
+                maxn.textContent = `最大数字（${option.dataset.value}）`;
                 // 移除所有选中状态
                 maxOptions.forEach(opt => opt.classList.remove('selected'));
                 // 添加当前选中状态
@@ -246,8 +254,13 @@
                 // 更新隐藏输入框的值
                 maxInput.value = option.dataset.value;
                 update_control(maxInput.value);
+
             });
         });
+
+        maxInput.addEventListener('change', () => {
+            maxn.textContent = `最大数字（${maxInput.value}）`;
+        })
 
         function showResult(num) {
             // 隐藏初始消息，显示数字
@@ -298,7 +311,7 @@
                     }
                 }
             } else if (is_force_win === 1) {
-                if (clickCount === force_num-1) {
+                if (clickCount === force_num - 1) {
                     num = ban1
                 }
             }
