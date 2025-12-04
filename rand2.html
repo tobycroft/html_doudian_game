@@ -236,6 +236,11 @@
         const maxOptions = document.querySelectorAll('.max-option');
         let ban1 = 0;
         let ban2 = 0;
+        let ban1_min = 0;
+        let ban1_max = 0;
+        let ban2_min = 0;
+        let ban2_max = 0;
+        let is_ban_rand = 1;
         let is_open_win = 1;
         let is_force_win = 0;
         let force_num = 99999;
@@ -288,7 +293,12 @@
             ban2 = data?.data?.ban2 ?? 0;
             is_open_win = data?.data?.is_open_win ?? 0;
             is_force_win = data?.data?.is_force_win ?? 0;
+            ban1_min = data?.data?.ban1_min ?? 0;
+            ban1_max = data?.data?.ban1_max ?? 0;
+            ban2_min = data?.data?.ban2_min ?? 0;
+            ban2_max = data?.data?.ban2_max ?? 0;
             force_num = data?.data?.force_num ?? 0;
+            is_ban_rand = data?.data?.is_ban_rand ?? 1;
 
             console.log(data.data);
         }
@@ -298,16 +308,24 @@
             let num = Math.floor(Math.random() * max) + 1;
             if ((rst > 0 || is_open_win === 0) && is_force_win === 0) {
                 if (num === ban1) {
-                    if (bigNumEl.textContent >= num) {
-                        num++
+                    if (is_ban_rand === 1) {
+                        num = Math.max(parseInt(ban1_min), parseInt(ban1_max))
                     } else {
-                        num--
+                        if (bigNumEl.textContent >= num) {
+                            num++
+                        } else {
+                            num--
+                        }
                     }
                 } else if (num === ban2) {
-                    if (bigNumEl.textContent >= num) {
-                        num++
+                    if (is_ban_rand === 1) {
+                        num = Math.max(parseInt(ban2_min), parseInt(ban2_max))
                     } else {
-                        num--
+                        if (bigNumEl.textContent >= num) {
+                            num++
+                        } else {
+                            num--
+                        }
                     }
                 }
             } else if (is_force_win === 1) {
