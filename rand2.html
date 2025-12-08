@@ -254,7 +254,7 @@
         // 最大数字选项点击事件
         maxOptions.forEach(option => {
             option.addEventListener('click', () => {
-                // maxn.textContent = `最大数字（${option.dataset.value}）`;
+                maxn.textContent = `模式:${option.dataset.value}`;
                 // 移除所有选中状态
                 maxOptions.forEach(opt => opt.classList.remove('selected'));
                 // 添加当前选中状态
