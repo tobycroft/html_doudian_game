@@ -190,6 +190,8 @@
     <div class="seg-control">
         <label id="maxn">最大数字</label>
         <div class="max-options">
+            <div class="max-option" data-value="23">23</div>
+            <div class="max-option" data-value="21">21</div>
             <div class="max-option selected" data-value="19">19</div>
             <!--            <div class="max-option" data-value="18">18</div>-->
             <div class="max-option" data-value="17">17</div>
@@ -203,7 +205,7 @@
 </div>
 <div class="controls">
     <div class="seg-control">
-        <input id="maxNumInput" type="range" min="1" max="19" value="19" step="1" style="width:100%">
+        <label id="maxNumInputShow">19</label><input id="maxNumInput" type="range" min="5" max="25" value="19" step="1" style="width:100%">
     </div>
 </div>
 <!-- 生成随机数按钮 -->
@@ -227,7 +229,8 @@
     (function () {
         const generateBtn = document.getElementById('generateBtn');
         const resetBtn = document.getElementById('resetBtn');
-        const maxInput = document.getElementById('maxNumInput');
+        const maxNumInput = document.getElementById('maxNumInput');
+        const maxNumInputShow = document.getElementById('maxNumInputShow');
         const counterEl = document.getElementById('counter');
         const bigNumEl = document.getElementById('bigNum');
         const maxn = document.getElementById('maxn');
@@ -251,20 +254,31 @@
         // 最大数字选项点击事件
         maxOptions.forEach(option => {
             option.addEventListener('click', () => {
-                maxn.textContent = `最大数字（${option.dataset.value}）`;
+                maxn.textContent = `模式:${option.dataset.value}`;
                 // 移除所有选中状态
                 maxOptions.forEach(opt => opt.classList.remove('selected'));
                 // 添加当前选中状态
                 option.classList.add('selected');
                 // 更新隐藏输入框的值
-                maxInput.value = option.dataset.value;
-                update_control(maxInput.value);
+                maxNumInput.value = option.dataset.value;
+
+                maxNumInputShow.textContent = maxNumInput.value;
+
+                update_control(maxNumInput.value);
 
             });
         });
 
-        maxInput.addEventListener('change', () => {
-            maxn.textContent = `最大数字（${maxInput.value}）`;
+        maxNumInput.addEventListener('change', () => {
+            maxn.textContent = `最大数字（${maxNumInput.value}）`;
+            maxNumInputShow.textContent = maxNumInput.value;
+            maxOptions.forEach(opt => {
+                if (parseInt(opt.textContent) !== parseInt(maxNumInput.value)) {
+                    opt.classList.remove('selected')
+                } else {
+                    opt.classList.add('selected');
+                }
+            });
         })
 
         function showResult(num) {
@@ -304,7 +318,7 @@
         }
 
         generateBtn.addEventListener('click', () => {
-            const max = Math.max(1, parseInt(maxInput.value) || 19);
+            const max = Math.max(1, parseInt(maxNumInput.value) || 19);
             let num = Math.floor(Math.random() * max) + 1;
             if ((rst > 0 || is_open_win === 0) && is_force_win === 0) {
                 if (num === ban1) {
@@ -355,7 +369,7 @@
             // 重置显示状态
             bigNumEl.style.display = 'none';
             initialMessage.style.display = 'block';
-            update_control(maxInput.value);
+            update_control(maxNumInput.value);
         });
 
         // 点击数字也能生成新的随机数
@@ -363,7 +377,7 @@
             generateBtn.click();
         });
 
-        update_control(maxInput.value);
+        update_control(maxNumInput.value);
     })();
 
 
