@@ -23,7 +23,7 @@
             top: 3vh;
             font-size: 6vh;
             color: #ff88c9;
-            text-shadow: 0 0 2vh rgba(255,150,200,0.8);
+            text-shadow: 0 0 2vh rgba(255, 150, 200, 0.8);
             font-weight: bold;
         }
 
@@ -43,14 +43,13 @@
             font-weight: bold;
             color: #ff4fa5;
 
-            box-shadow:
-                    inset 0 0 4vh rgba(255,130,180,0.4),
-                    0 1vh 4vh rgba(0,0,0,0.6),
-                    0 0 4vh rgba(255,160,210,0.4);
+            box-shadow: inset 0 0 4vh rgba(255, 130, 180, 0.4),
+            0 1vh 4vh rgba(0, 0, 0, 0.6),
+            0 0 4vh rgba(255, 160, 210, 0.4);
 
             position: relative;
             transform: translateY(0);
-            transition: transform 0.25s cubic-bezier(.25,1.5,.35,1);
+            transition: transform 0.25s cubic-bezier(.25, 1.5, .35, 1);
         }
 
         #start {
@@ -68,9 +67,8 @@
             font-weight: bold;
             cursor: pointer;
 
-            box-shadow:
-                    0 0.8vh 2vh rgba(255,100,160,0.5),
-                    inset 0 0 2vh rgba(255,255,255,0.4);
+            box-shadow: 0 0.8vh 2vh rgba(255, 100, 160, 0.5),
+            inset 0 0 2vh rgba(255, 255, 255, 0.4);
 
             transition: transform 0.15s ease;
         }
@@ -87,11 +85,14 @@
 <div id="box">0</div>
 <button id="start">开始</button>
 
+
+
 <script>
     const box = document.getElementById("box");
+    const startBtn = document.getElementById("start");
 
-    let numbers = [2, 3, 4, 5]; // 数字数组
-    let probabilities = [0.5, 0.25, 0.125, 0.075]; // 对应出现概率
+    let numbers = []; // 数字数组缓存
+    let probabilities = []; // 对应概率缓存
     let index = 0;
     let running = false;
 
@@ -99,7 +100,14 @@
     let minSpeed = 100;
     let maxSpeed = 600;
 
-    // 根据权重随机选择目标数字
+    let target = 3; // 初始目标数字
+
+    // 页面刚加载时按钮灰色不可点
+    startBtn.disabled = true;
+    startBtn.style.background = "#888"; // 灰色表示不可点击
+    startBtn.style.cursor = "not-allowed";
+
+    // 权重随机选择最终数字
     function weightedRandom() {
         let r = Math.random();
         let sum = 0;
@@ -110,26 +118,56 @@
         return numbers[numbers.length - 1]; // 兜底
     }
 
-    let target = 3; // 初始目标数字
+    // 预先异步拉取接口数据（页面加载或初始化时）
+    async function fetchData() {
+        try {
+            const form = new FormData();
+            const res = await fetch('https://gameapi.tuuz.cc:444/v2/doudian/game/wheel', {
+                method: 'POST',
+                body: form
+            });
+            const data = await res.json();
+            if (Array.isArray(data?.data)) {
+                numbers = [];
+                probabilities = [];
+                data.data.forEach(item => {
+                    numbers.push(item.num);
+                    probabilities.push(item.ratio);
+                });
+            }
 
+            // 数据加载完毕，按钮恢复可点
+            startBtn.disabled = false;
+            startBtn.style.background = "#ff66b7"; // 恢复原来的颜色
+            startBtn.style.cursor = "pointer";
+        } catch (e) {
+            console.error("接口获取失败", e);
+            // 兜底示例
+            numbers = [2,3,4,5];
+            probabilities = [0.5,0.25,0.125,0.075];
+
+            // 即使接口失败，也允许点击
+            startBtn.disabled = false;
+            startBtn.style.background = "#ff66b7";
+            startBtn.style.cursor = "pointer";
+        }
+    }
+
+    // 动画跳动函数
     function jump() {
         if (!running) return;
 
-        // 跳动动画
         box.style.transform = "translateY(-10vh)";
         setTimeout(() => {
             box.style.transform = "translateY(0)";
         }, speed * 0.4);
 
-        // 切换数字
         index = (index + 1) % numbers.length;
         box.textContent = numbers[index];
 
-        // 加速 / 减速逻辑
         if (speed < 240) speed += 24;      // 加速阶段
         else if (speed < maxSpeed) speed += 48; // 减速阶段
 
-        // 判断停止条件
         if (speed >= maxSpeed && numbers[index] === target) {
             running = false;
             return;
@@ -138,18 +176,26 @@
         setTimeout(jump, speed);
     }
 
-    document.getElementById("start").onclick = () => {
-        if (running) return;
+    // 点击开始事件
+    startBtn.onclick = () => {
+        if (running || startBtn.disabled) return;
 
         index = 0;
         speed = minSpeed;
         running = true;
 
-        // 每次点击开始时，根据概率选择最终停的数字
+        // 立即使用缓存数据
         target = weightedRandom();
         jump();
+
+        // 同步刷新下一次数据（不阻塞动画）
+        fetchData();
     };
+
+    // 页面加载时预先拉取一次接口数据
+    window.onload = fetchData;
 </script>
+
 
 
 </body>
