@@ -86,28 +86,39 @@
 <button id="start">开始</button>
 
 
-
 <script>
     const box = document.getElementById("box");
     const startBtn = document.getElementById("start");
 
-    let numbers = []; // 数字数组缓存
-    let probabilities = []; // 对应概率缓存
+    let numbers = [];
+    let probabilities = [];
     let index = 0;
     let running = false;
 
-    let speed = 200;  // 初始跳动速度
+    let speed = 200;
     let minSpeed = 100;
     let maxSpeed = 600;
 
-    let target = 3; // 初始目标数字
+    let target = 3;
 
-    // 页面刚加载时按钮灰色不可点
     startBtn.disabled = true;
-    startBtn.style.background = "#888"; // 灰色表示不可点击
+    startBtn.style.background = "#888";
     startBtn.style.cursor = "not-allowed";
 
-    // 权重随机选择最终数字
+    function chooseTarget() {
+        const locked = numbers
+            .map((num, i) => ({num, isLock: data[i]?.is_lock}))
+            .filter(item => item.isLock === 1)
+            .map(item => item.num);
+
+        if (locked.length > 0) {
+            const idx = Math.floor(Math.random() * locked.length);
+            return locked[idx];
+        } else {
+            return weightedRandom();
+        }
+    }
+
     function weightedRandom() {
         let r = Math.random();
         let sum = 0;
@@ -118,7 +129,6 @@
         return numbers[numbers.length - 1]; // 兜底
     }
 
-    // 预先异步拉取接口数据（页面加载或初始化时）
     async function fetchData() {
         try {
             const form = new FormData();
@@ -136,24 +146,20 @@
                 });
             }
 
-            // 数据加载完毕，按钮恢复可点
             startBtn.disabled = false;
             startBtn.style.background = "#ff66b7"; // 恢复原来的颜色
             startBtn.style.cursor = "pointer";
         } catch (e) {
             console.error("接口获取失败", e);
-            // 兜底示例
-            numbers = [2,3,4,5];
-            probabilities = [0.5,0.25,0.125,0.075];
+            numbers = [2, 3, 4, 5];
+            probabilities = [0.5, 0.25, 0.125, 0.075];
 
-            // 即使接口失败，也允许点击
             startBtn.disabled = false;
             startBtn.style.background = "#ff66b7";
             startBtn.style.cursor = "pointer";
         }
     }
 
-    // 动画跳动函数
     function jump() {
         if (!running) return;
 
@@ -176,7 +182,7 @@
         setTimeout(jump, speed);
     }
 
-    // 点击开始事件
+    ''
     startBtn.onclick = () => {
         if (running || startBtn.disabled) return;
 
@@ -184,18 +190,15 @@
         speed = minSpeed;
         running = true;
 
-        // 立即使用缓存数据
-        target = weightedRandom();
+        target = chooseTarget();
         jump();
 
-        // 同步刷新下一次数据（不阻塞动画）
         fetchData();
     };
 
-    // 页面加载时预先拉取一次接口数据
+
     window.onload = fetchData;
 </script>
-
 
 
 </body>
