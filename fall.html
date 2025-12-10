@@ -206,13 +206,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/matter-js/build/matter.min.js"></script>
 <script>
-    if (screen.orientation && screen.orientation.lock) {
-        screen.orientation.lock('landscape').then(() => {
-            console.log('屏幕锁定为横屏');
-        }).catch(err => {
-            console.warn('无法锁定屏幕:', err);
-        });
-    }
+
     (function () {
         const {Engine, Render, Runner, Bodies, Composite, Events, Body} = Matter;
 
@@ -236,6 +230,7 @@
         let slotWidth = 0;
         let slotHeight = 0;
         let engine, render;
+
 
         // helper: update UI selection
         function updatePackUI() {
@@ -582,6 +577,10 @@
         preloadSlots(false);
 
     })();
+
+    document.documentElement.requestFullscreen().then(() => {
+        screen.orientation.lock('landscape');
+    });
 </script>
 
 </body>
