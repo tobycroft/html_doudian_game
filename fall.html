@@ -1,255 +1,569 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <title>iPhone 横屏 Plinko</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
+    <title>Plinko - Pack 接口驱动（可爱风）</title>
     <style>
-        body {
-            margin: 0;
-            overflow: hidden;
-            font-family: "Segoe UI", "PingFang SC", sans-serif;
-
-            /* ★ 可爱渐变背景（非黑灰） */
-            background: linear-gradient(135deg, #ffb3d9 0%, #a8c7ff 100%);
+        :root {
+            --accent1: #ff9eb5;
+            --accent2: #ffbf80;
+            --glass: rgba(255, 255, 255, 0.22);
         }
 
-        canvas { display: block; }
+        html, body {
+            height: 100%;
+            margin: 0;
+            white-space:nowrap;
+        }
 
-        /* ★ 控件毛玻璃面板 */
-        #controls {
+        body {
+            font-family: "Segoe UI", "PingFang SC", system-ui, sans-serif;
+            margin: 0;
+            overflow: hidden;
+            background: linear-gradient(135deg, #ffd6eb 0%, #cfe3ff 100%);
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        canvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        /* top area */
+        #topBar {
             position: absolute;
-            top: 15px;
+            top: 8px;
             left: 50%;
             transform: translateX(-50%);
-            padding: 10px 20px;
+            z-index: 200;
             display: flex;
             gap: 12px;
             align-items: center;
+        }
 
-            background: rgba(255, 255, 255, 0.25);
-            backdrop-filter: blur(10px);
-            border-radius: 16px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        .group {
+            padding: 8px;
+            border-radius: 18px;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.12);
+            backdrop-filter: blur(8px);
+            box-shadow: 0 6px 14px rgba(0, 0, 0, 0.08);
+        }
+
+        .label {
+            color: #fff;
+            font-weight: 700;
+            font-size: 14px;
+        }
+
+        .btn {
+            min-width: 36px;
+            height: 36px;
+            border-radius: 12px;
+            border: none;
+            cursor: pointer;
+            background: transparent;
+            color: #fff;
+            font-weight: 700;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform .12s, box-shadow .12s, opacity .12s;
+        }
+
+        .btn.selected {
+            background: linear-gradient(180deg, #fff 0%, #ffecef 100%);
+            color: #ff5a8a;
+            box-shadow: 0 6px 20px rgba(255, 90, 138, 0.18);
+            transform: translateY(-2px);
+        }
+
+        /* controls */
+        #controls {
+            position: absolute;
+            top: 72px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 190;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            padding: 10px 14px;
+            border-radius: 14px;
+            background: var(--glass);
+            backdrop-filter: blur(8px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
         }
 
         #controls label {
             color: #fff;
-            font-size: 18px;
-            font-weight: bold;
+            font-weight: 700;
+            margin-right: 6px;
         }
 
-        #controls input {
-            width: 60px;
-            padding: 6px;
-            border-radius: 8px;
+        #targetNum {
+            width: 64px;
+            padding: 6px 8px;
+            border-radius: 10px;
             border: none;
             text-align: center;
             font-size: 16px;
         }
 
-        /* ★ 可爱按钮样式 */
-        button {
-            padding: 8px 16px;
+        button.uiBtn {
+            padding: 8px 14px;
+            border-radius: 12px;
             border: none;
-            border-radius: 14px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
             color: #fff;
-            transition: 0.2s;
-            box-shadow: 0 3px 8px rgba(0,0,0,0.18);
+            font-weight: 800;
+            font-size: 15px;
+            box-shadow: 0 6px 14px rgba(0, 0, 0, 0.12);
+            cursor: pointer;
         }
 
         #dropBall {
-            background: #ff9eb5;
+            background: linear-gradient(180deg, var(--accent1), #ff85a3);
         }
-        #dropBall:hover { background: #ff85a3; }
+
+        #dropBall[disabled] {
+            opacity: .56;
+            cursor: not-allowed;
+            filter: grayscale(.05);
+        }
 
         #resetBalls {
-            background: #ffbf80;
+            background: linear-gradient(180deg, var(--accent2), #ffac57);
         }
-        #resetBalls:hover { background: #ffac57; }
 
-        /* ★ 顶部提示文字 */
+        /* result */
         #result {
             position: absolute;
-            top: 70px;
+            top: 130px;
             left: 50%;
             transform: translateX(-50%);
-            font-size: 26px;
+            z-index: 180;
             color: #fff;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
-            font-weight: bold;
+            font-size: 20px;
+            font-weight: 900;
+            text-shadow: 0 3px 10px rgba(0, 0, 0, 0.22);
         }
+
+        .hint {
+            position: absolute;
+            bottom: 18px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #fffdd2;
+            font-weight: 700;
+            z-index: 140;
+        }
+
     </style>
 </head>
 <body>
 
-<div id="result"></div>
+<!-- top: pack selector + packCount selector -->
+<div id="topBar">
+    <div class="group" id="packSelector" aria-label="pack selector">
+        <span class="label">保底包数:</span>
+        <button class="btn" data-pack="1">1</button>
+        <button class="btn" data-pack="2">2</button>
+        <button class="btn" data-pack="3">3</button>
+        <button class="btn" data-pack="4">4</button>
+    </div>
 
-<div id="controls">
-    <label>目标: <input id="targetNum" type="number" value="2"></label>
-    <button id="dropBall">掉落小球</button>
-    <button id="resetBalls">重新开始</button>
+    <div class="group" id="countSelector" aria-label="ball count">
+        <span class="label">推几手：</span>
+        <button class="btn" data-count="1">1</button>
+        <button class="btn" data-count="2">2</button>
+        <button class="btn" data-count="3">3</button>
+        <button class="btn" data-count="5">5</button>
+    </div>
 </div>
+
+<!-- controls -->
+<div id="controls">
+    <label style="color:#fff"></label>
+    <button id="dropBall" class="uiBtn" disabled>请求并掉落</button>
+    <button id="resetBalls" class="uiBtn">重新开始</button>
+</div>
+
+<div id="result"></div>
+<!--<div class="hint">首次加载会自动从服务器预取槽数据，请等待加载完毕再点击“请求并掉落”。</div>-->
 
 <script src="https://cdn.jsdelivr.net/npm/matter-js/build/matter.min.js"></script>
 <script>
+    (function () {
+        const {Engine, Render, Runner, Bodies, Composite, Events, Body} = Matter;
 
-    const {Engine, Render, Runner, Bodies, Composite, Events, Body} = Matter;
+        // UI elements
+        const packSelector = document.getElementById('packSelector');
+        const packButtons = Array.from(packSelector.querySelectorAll('.btn'));
+        const countSelector = document.getElementById('countSelector');
+        const countButtons = Array.from(countSelector.querySelectorAll('.btn'));
+        const dropBtn = document.getElementById('dropBall');
+        const resetBtn = document.getElementById('resetBalls');
+        const resultDiv = document.getElementById('result');
 
-    const engine = Engine.create();
-    const world = engine.world;
+        // state
+        let pack = 2;         // default pack for API
+        let packCount = 1;    // number of balls to drop at once (1,2,3,5)
+        let slotsData = [];   // array from server (each item has num,is_lock,ratio,...)
+        let staticBodies = []; // slot walls + bottoms
+        let pegBodies = [];    // pegs
+        let balls = [];        // active balls
+        let slotCount = 0;
+        let slotWidth = 0;
+        let slotHeight = 0;
+        let engine, render;
 
-    let width = window.innerWidth;
-    let height = window.innerHeight;
-
-    window.addEventListener("resize", () => {
-        width = window.innerWidth;
-        height = window.innerHeight;
-        render.canvas.width = width;
-        render.canvas.height = height;
-    });
-
-    const render = Render.create({
-        element: document.body,
-        engine,
-        options: {
-            width,
-            height,
-            wireframes:false,
-
-            /* ★ 渐变背景由 body 控制，canvas 背景透明 */
-            background: "transparent"
+        // helper: update UI selection
+        function updatePackUI() {
+            packButtons.forEach(b => b.classList.toggle('selected', Number(b.dataset.pack) === pack));
         }
-    });
 
-    Render.run(render);
-    Runner.run(Runner.create(), engine);
-
-    /* 边界 */
-    const wallThickness = 20;
-    Composite.add(world, [
-        Bodies.rectangle(width/2, -wallThickness/2, width, wallThickness, {isStatic:true}),
-        Bodies.rectangle(width/2, height+wallThickness/2, width, wallThickness, {isStatic:true}),
-        Bodies.rectangle(-wallThickness/2, height/2, wallThickness, height, {isStatic:true}),
-        Bodies.rectangle(width+wallThickness/2, height/2, wallThickness, height, {isStatic:true}),
-    ]);
-
-    /* 底部格子 */
-    const slotsArr = [1,3,2,1,5,6,5,1,4,3,2,1];
-    const slotCount = slotsArr.length;
-    const slotWidth = width / slotCount;
-    const slotHeight = height * 0.18;
-
-    for (let i=0;i<slotCount;i++){
-        const leftX = i*slotWidth;
-        const rightX = (i+1)*slotWidth;
-        const yTop = height - slotHeight;
-
-        Composite.add(world, Bodies.rectangle(leftX, yTop+slotHeight/2, 3, slotHeight, {isStatic:true, render:{fillStyle:"#fff"}}));
-        Composite.add(world, Bodies.rectangle(rightX, yTop+slotHeight/2, 3, slotHeight, {isStatic:true, render:{fillStyle:"#fff"}}));
-        Composite.add(world, Bodies.rectangle(leftX+slotWidth/2, height, slotWidth, 3, {isStatic:true, render:{fillStyle:"#fff"}}));
-    }
-
-    /* 数字绘制 */
-    const canvas = render.canvas;
-    const ctx = canvas.getContext("2d");
-    (function drawNums(){
-        ctx.clearRect(0,0,width,height);
-        Render.world(render);
-
-        ctx.fillStyle = "#fff";
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        ctx.font = `${Math.floor(slotHeight/2)}px Arial`;
-
-        for(let i=0;i<slotCount;i++){
-            ctx.fillText(slotsArr[i], i*slotWidth + slotWidth/2, height - slotHeight/2);
+        function updateCountUI() {
+            countButtons.forEach(b => b.classList.toggle('selected', Number(b.dataset.count) === packCount));
         }
-        requestAnimationFrame(drawNums);
-    })();
 
-    /* 柱子网格（三角） */
-    const rows = 7;
-    const cols = 18;
-    const spacingX = width / cols;
-    const spacingY = (height - slotHeight - 100) / rows;
-    const radius = 6;
+        // init pack UI default
+        pack = 2;
+        packCount = 1;
+        updatePackUI();
+        updateCountUI();
 
-    for(let r=0;r<rows;r++){
-        const isOdd = r % 2 !== 0;
-        const offset = isOdd ? spacingX/2 : 0;
-        const colCount = isOdd ? cols - 1 : cols;
+        // attach events
+        packButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                pack = Number(btn.dataset.pack);
+                updatePackUI();
+                // on pack change, we should refresh server data immediately (non-blocking)
+                preloadSlots(true); // background refresh
+            });
+        });
 
-        for(let c=0;c<colCount;c++){
-            Composite.add(world, Bodies.circle(
-                c*spacingX + offset + spacingX/2,
-                r*spacingY + 100,
-                radius,
-                {
-                    isStatic:true,
-                    render:{ fillStyle:"#ffffff88" }   // ★ 白色透明的小柱子
+        countButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                packCount = Number(btn.dataset.count);
+                updateCountUI();
+            });
+        });
+
+        // ---------------- Matter.js init ----------------
+        engine = Engine.create();
+        const world = engine.world;
+
+        let width = window.innerWidth;
+        let height = window.innerHeight;
+
+        render = Render.create({
+            element: document.body,
+            engine,
+            options: {width, height, wireframes: false, background: 'transparent'}
+        });
+        Render.run(render);
+        Runner.run(Runner.create(), engine);
+
+        // handle resize (simple)
+        window.addEventListener('resize', () => {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            render.canvas.width = width;
+            render.canvas.height = height;
+        });
+
+        // add outer boundaries (static)
+        const wallThickness = 30;
+        Composite.add(world, [
+            Bodies.rectangle(width / 2, -wallThickness / 2, width, wallThickness, {isStatic: true}),
+            Bodies.rectangle(width / 2, height + wallThickness / 2, width, wallThickness, {isStatic: true}),
+            Bodies.rectangle(-wallThickness / 2, height / 2, wallThickness, height, {isStatic: true}),
+            Bodies.rectangle(width + wallThickness / 2, height / 2, wallThickness, height, {isStatic: true})
+        ]);
+
+        // overlay drawing of numbers
+        const ctx = render.canvas.getContext('2d');
+        (function drawLoop() {
+            ctx.clearRect(0, 0, width, height);
+            Render.world(render);
+
+            // draw numbers inside slots
+            if (slotCount > 0) {
+                ctx.fillStyle = '#fff';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                const fontSize = Math.max(14, Math.floor(slotHeight * 0.48));
+                ctx.font = `${fontSize}px Arial`;
+                for (let i = 0; i < slotCount; i++) {
+                    const x = i * slotWidth + slotWidth / 2;
+                    const y = height - slotHeight / 2;
+                    ctx.fillText(String(slotsData[i].num), x, y);
+                    if (Number(slotsData[i].is_lock) === 1) {
+                        // small lock dot to indicate locked
+                        ctx.fillStyle = 'rgba(255,255,255,0.95)';
+                        ctx.beginPath();
+                        ctx.arc(x + slotWidth / 2 - 18, y - slotHeight / 2 + 16, 7, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.fillStyle = '#fff';
+                    }
                 }
-            ));
+            }
+
+            requestAnimationFrame(drawLoop);
+        })();
+
+        // helper: clear static objects (slots + pegs)
+        function clearStatics() {
+            staticBodies.forEach(b => Composite.remove(world, b));
+            pegBodies.forEach(b => Composite.remove(world, b));
+            staticBodies = [];
+            pegBodies = [];
         }
-    }
 
-    /* 小球管理 */
-    let balls = [];
+        // build layout from slotsData (simple version)
+        function buildLayout() {
+            clearStatics();
 
-    function dropBall(targetNum){
-        const arr = [];
-        slotsArr.forEach((v,i)=>{ if(v===targetNum) arr.push(i) });
-        if(arr.length === 0) return;
+            /** ---------------- Slots （底部格子） ---------------- **/
+            slotCount = slotsData.length || 0;
+            slotWidth = width / Math.max(slotCount, 1);
+            slotHeight = height * 0.18;
 
-        const idx = arr[Math.floor(Math.random()*arr.length)];
-        const targetX = idx*slotWidth + slotWidth/2;
+            for (let i = 0; i < slotCount; i++) {
+                const leftX = i * slotWidth;
+                const rightX = (i + 1) * slotWidth;
+                const yTop = height - slotHeight;
 
-        const startX = targetX + (Math.random()-0.5) * slotWidth * 1.5;
+                const leftWall = Bodies.rectangle(
+                    leftX,
+                    yTop + slotHeight / 2,
+                    2, slotHeight,
+                    {isStatic:true, render:{fillStyle:'#ffffffcc'}}
+                );
 
-        const ball = Bodies.circle(startX, 50, 12, {
-            restitution:0.6,
-            friction:0.85,
-            frictionAir:0.045,
+                const rightWall = Bodies.rectangle(
+                    rightX,
+                    yTop + slotHeight / 2,
+                    2, slotHeight,
+                    {isStatic:true, render:{fillStyle:'#ffffffcc'}}
+                );
 
-            /* ★ 可爱渐变色小球 */
-            render:{
-                fillStyle: "url(#pinkBall)"
+                const bottom = Bodies.rectangle(
+                    leftX + slotWidth/2,
+                    height,
+                    slotWidth,
+                    2,
+                    {isStatic:true, render:{fillStyle:'#ffffffcc'}}
+                );
+
+                Composite.add(world, [leftWall, rightWall, bottom]);
+                staticBodies.push(leftWall, rightWall, bottom);
             }
+
+            /** ---------------- Pegs（柱子/钉子） ---------------- **/
+            const rows = 7;
+            const cols = 18;
+            const spacingX = width / cols-1;
+            const spacingY = (height - slotHeight - 100) / rows-10;
+            const radius = 6;
+
+            for (let r = 0; r < rows; r++) {
+                const isOdd = r % 2 !== 0;
+                const offset = isOdd ? spacingX / 2 : 0;
+                const count = isOdd ? cols - 1 : cols;
+
+                for (let c = 0; c < count; c++) {
+                    const peg = Bodies.circle(
+                        c * spacingX + offset + spacingX / 2,
+                        r * spacingY + 150,
+                        radius,
+                        {isStatic: true, render:{fillStyle:"#ffffff88"}}
+                    );
+                    Composite.add(world, peg);
+                    pegBodies.push(peg);
+                }
+            }
+        }
+
+
+        // fetch slots from server (returns data array or throws)
+        async function fetchSlots(packValue) {
+            const url = 'https://upload.tuuz.cc:444/v2/doudian/game/fall';
+            const fd = new FormData();
+            fd.append('pack', String(packValue));
+            const resp = await fetch(url, {method: 'POST', body: fd});
+            if (!resp.ok) throw new Error('network ' + resp.status);
+            const json = await resp.json();
+            if (!json || !Array.isArray(json.data)) throw new Error('invalid data');
+            return json.data;
+        }
+
+        // weighted random by ratio; if all weights zero -> uniform
+        function weightedIndexByRatio(data) {
+            const weights = data.map(it => {
+                const r = Number(it.ratio);
+                return (isFinite(r) && r >= 0) ? r : 0;
+            });
+            const sum = weights.reduce((s, a) => s + a, 0);
+            if (sum <= 0) {
+                return Math.floor(Math.random() * data.length);
+            }
+            let rnd = Math.random() * sum;
+            for (let i = 0; i < weights.length; i++) {
+                rnd -= weights[i];
+                if (rnd <= 0) return i;
+            }
+            return weights.length - 1;
+        }
+
+        // choose target index per rules:
+        // if any is_lock == 1 -> pick random among them
+        // else pick weighted by ratio across all indices
+        function chooseTargetIndexFromData() {
+            if (!slotsData || slotsData.length === 0) return -1;
+            const locked = [];
+            for (let i = 0; i < slotsData.length; i++) {
+                if (Number(slotsData[i].is_lock) === 1) locked.push(i);
+            }
+            if (locked.length > 0) return locked[Math.floor(Math.random() * locked.length)];
+            return weightedIndexByRatio(slotsData);
+        }
+
+        // spawn a ball near target index (randomized startX), ball.targetX used for micro-guidance
+        function spawnBallForIndex(idx) {
+            if (idx < 0 || idx >= slotCount) return;
+            const targetX = idx * slotWidth + slotWidth / 2;
+            const offsetRange = slotWidth * 0.6;
+            const startX = targetX + (Math.random() - 0.5) * offsetRange;
+            const ballRadius = Math.max(8, Math.min(14, Math.round(slotWidth * 0.11)));
+            const ball = Bodies.circle(startX, 50, ballRadius, {
+                restitution: 0.18,
+                friction: 0.6,
+                frictionAir: 0.02,
+                render: {fillStyle: '#ff6fa4'}
+            });
+            ball.targetX = targetX;
+            balls.push(ball);
+            Composite.add(world, ball);
+        }
+
+        // micro-guidance & landing detection
+        Events.on(engine, 'afterUpdate', () => {
+            for (let i = 0; i < balls.length; i++) {
+                const ball = balls[i];
+                if (!ball) continue;
+                // micro force while above slot area
+                if (ball.position.y < height - slotHeight - 12) {
+                    const dx = ball.targetX - ball.position.x;
+                    const heightFactor = Math.max(0.08, (ball.position.y / (height - slotHeight)));
+                    Body.applyForce(ball, ball.position, {x: dx * 0.000005 * heightFactor, y: 0});
+                }
+                // landing: if inside bottom region, zero velocity and snap
+                if (ball.position.y > height - slotHeight - 6) {
+                    Body.setVelocity(ball, {x: 0, y: 0});
+                    Body.setAngularVelocity(ball, 0);
+                    const idx = Math.max(0, Math.min(slotCount - 1, Math.floor(ball.position.x / slotWidth)));
+                    resultDiv.textContent = `小球落在数字: ${slotsData[idx].num} （格子 ${idx}）`;
+                }
+            }
+            // enable/disable dropBtn: allow one round at a time (no new drop while existing balls are moving)
+            const anyMoving = balls.some(b => b && (Math.abs(b.velocity.x) > 0.2 || Math.abs(b.velocity.y) > 0.2));
+            // only enable when data loaded and no moving balls
+            dropBtn.disabled = (slotsData.length === 0) || anyMoving;
         });
 
-        ball.targetX = targetX;
-        balls.push(ball);
-        Composite.add(world, ball);
-    }
+        // preload on page load: fetch once and build layout; during this dropBtn is disabled
+        let initialLoading = true;
 
-    /* 重力引导 */
-    Events.on(engine, "afterUpdate", ()=>{
-        balls.forEach(ball=>{
-            if(ball.position.y < height - slotHeight - 20){
-                const dx = ball.targetX - ball.position.x;
-                Body.applyForce(ball, ball.position, {x:dx*0.000002, y:0});
+        async function preloadSlots(backgroundOnly = false) {
+            // backgroundOnly true = caller initiated refresh but UI may already be interactive
+            try {
+                if (!backgroundOnly) {
+                    dropBtn.disabled = true;
+                    resultDiv.textContent = '加载中...';
+                }
+                const data = await fetchSlots(pack);
+                // normalize
+                slotsData = data.map(d => ({
+                    num: ('num' in d) ? d.num : (d.value ?? 0),
+                    is_lock: ('is_lock' in d) ? Number(d.is_lock) : 0,
+                    ratio: ('ratio' in d) ? Number(d.ratio) : 0,
+                    raw: d
+                }));
+                buildLayout();
+                resultDiv.textContent = '';
+            } catch (err) {
+                console.error('预加载失败', err);
+                if (!backgroundOnly) resultDiv.textContent = '预加载失败，请稍后重试';
+            } finally {
+                initialLoading = false;
+                // enable drop if no balls moving and slotsData exists
+                const anyMoving = balls.some(b => b && (Math.abs(b.velocity.x) > 0.2 || Math.abs(b.velocity.y) > 0.2));
+                dropBtn.disabled = (slotsData.length === 0) || anyMoving;
             }
-            if(ball.position.y > height-slotHeight){
-                Body.setVelocity(ball,{x:0,y:0});
+        }
+
+        // main: when clicking drop -> choose target index (per rules) then spawn packCount balls
+        // After spawn, do a background refresh of slotsData for next round
+        async function onDropClicked() {
+            if (slotsData.length === 0) return;
+            // prevent if balls are moving (guard)
+            const anyMoving = balls.some(b => b && (Math.abs(b.velocity.x) > 0.2 || Math.abs(b.velocity.y) > 0.2));
+            if (anyMoving) return;
+
+            // Choose target(s):
+            // If there are locked slots, each spawned ball will choose randomly among locked ones (consistent with spec).
+            // Otherwise, use weighted selection for each ball independently.
+            for (let i = 0; i < packCount; i++) {
+                let chosenIdx;
+                const lockedIdxs = slotsData.map((it, idx) => Number(it.is_lock) === 1 ? idx : -1).filter(x => x >= 0);
+                if (lockedIdxs.length > 0) {
+                    chosenIdx = lockedIdxs[Math.floor(Math.random() * lockedIdxs.length)];
+                } else {
+                    // weighted by ratio across indices
+                    chosenIdx = weightedIndexByRatio(slotsData);
+                }
+                spawnBallForIndex(chosenIdx);
             }
+
+            // Immediately kick off background fetch to refresh slots for next round (non-blocking)
+            (async () => {
+                try {
+                    const data = await fetchSlots(pack);
+                    slotsData = data.map(d => ({
+                        num: ('num' in d) ? d.num : (d.value ?? 0),
+                        is_lock: ('is_lock' in d) ? Number(d.is_lock) : 0,
+                        ratio: ('ratio' in d) ? Number(d.ratio) : 0,
+                        raw: d
+                    }));
+                    buildLayout();
+                } catch (err) {
+                    console.error('后台刷新失败', err);
+                    // keep current slotsData if refresh fails
+                }
+            })();
+        }
+
+        // reset: remove balls (keep layout)
+        resetBtn.addEventListener('click', () => {
+            balls.forEach(b => Composite.remove(world, b));
+            balls = [];
+            resultDiv.textContent = '';
+            // re-enable drop if slotsData loaded
+            dropBtn.disabled = (slotsData.length === 0);
         });
-    });
 
-    /* 重新开始按钮 */
-    document.getElementById("resetBalls").onclick = ()=>{
-        balls.forEach(ball=> Composite.remove(world, ball));
-        balls = [];
-        document.getElementById("result").innerText = "";
-    };
+        dropBtn.addEventListener('click', onDropClicked);
 
-    document.getElementById("dropBall").onclick = ()=>{
-        const t = Number(document.getElementById("targetNum").value);
-        dropBall(t);
-    };
+        // initial preload
+        preloadSlots(false);
 
+    })();
 </script>
 
 </body>
