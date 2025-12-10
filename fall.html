@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
-    <title>Plinko - Pack 接口驱动（可爱风）</title>
+    <title>落地成盒模拟器</title>
     <style>
         :root {
             --accent1: #ff9eb5;
@@ -14,7 +14,7 @@
         html, body {
             height: 100%;
             margin: 0;
-            white-space:nowrap;
+            white-space: nowrap;
         }
 
         body {
@@ -34,7 +34,7 @@
         /* top area */
         #topBar {
             position: absolute;
-            top: 8px;
+            top: 2rem;
             left: 50%;
             transform: translateX(-50%);
             z-index: 200;
@@ -155,10 +155,10 @@
 
         .hint {
             position: absolute;
-            bottom: 18px;
+            top: 0;
             left: 50%;
             transform: translateX(-50%);
-            color: #fffdd2;
+            color: #8bc34a;
             font-weight: 700;
             z-index: 140;
         }
@@ -184,17 +184,18 @@
         <button class="btn" data-count="3">3</button>
         <button class="btn" data-count="5">5</button>
     </div>
+<!--    <div id="controls">-->
+        <label style="color:#fff"></label>
+        <button id="dropBall" class="uiBtn" disabled>请求并掉落</button>
+        <button id="resetBalls" class="uiBtn">重新开始</button>
+<!--    </div>-->
 </div>
 
 <!-- controls -->
-<div id="controls">
-    <label style="color:#fff"></label>
-    <button id="dropBall" class="uiBtn" disabled>请求并掉落</button>
-    <button id="resetBalls" class="uiBtn">重新开始</button>
-</div>
+
 
 <div id="result"></div>
-<!--<div class="hint">首次加载会自动从服务器预取槽数据，请等待加载完毕再点击“请求并掉落”。</div>-->
+<div class="hint">比特拆卡-落地成盒模拟器</div>
 
 <script src="https://cdn.jsdelivr.net/npm/matter-js/build/matter.min.js"></script>
 <script>
@@ -343,22 +344,22 @@
                     leftX,
                     yTop + slotHeight / 2,
                     2, slotHeight,
-                    {isStatic:true, render:{fillStyle:'#ffffffcc'}}
+                    {isStatic: true, render: {fillStyle: '#ffffffcc'}}
                 );
 
                 const rightWall = Bodies.rectangle(
                     rightX,
                     yTop + slotHeight / 2,
                     2, slotHeight,
-                    {isStatic:true, render:{fillStyle:'#ffffffcc'}}
+                    {isStatic: true, render: {fillStyle: '#ffffffcc'}}
                 );
 
                 const bottom = Bodies.rectangle(
-                    leftX + slotWidth/2,
+                    leftX + slotWidth / 2,
                     height,
                     slotWidth,
                     2,
-                    {isStatic:true, render:{fillStyle:'#ffffffcc'}}
+                    {isStatic: true, render: {fillStyle: '#ffffffcc'}}
                 );
 
                 Composite.add(world, [leftWall, rightWall, bottom]);
@@ -366,10 +367,10 @@
             }
 
             /** ---------------- Pegs（柱子/钉子） ---------------- **/
-            const rows = 7;
-            const cols = 18;
-            const spacingX = width / cols-0.5;
-            const spacingY = (height - slotHeight - 100) / rows-10;
+            const rows = 6;
+            const cols = 20;
+            const spacingX = width / cols - 0.5;
+            const spacingY = (height - slotHeight - 100) / rows - 10;
             const radius = 6;
 
             for (let r = 0; r < rows; r++) {
@@ -382,7 +383,7 @@
                         c * spacingX + offset + spacingX / 2,
                         r * spacingY + 150,
                         radius,
-                        {isStatic: true, render:{fillStyle:"#ffffff88"}}
+                        {isStatic: true, render: {fillStyle: "#ffffff88"}}
                     );
                     Composite.add(world, peg);
                     pegBodies.push(peg);
@@ -444,7 +445,9 @@
             const ball = Bodies.circle(startX, 50, ballRadius, {
                 restitution: 0.18,
                 friction: 0.6,
+                frictionStatic: 0.5,
                 frictionAir: 0.02,
+                density: 0.02,
                 render: {fillStyle: '#ff6fa4'}
             });
             ball.targetX = targetX;
@@ -528,6 +531,7 @@
                     // weighted by ratio across indices
                     chosenIdx = weightedIndexByRatio(slotsData);
                 }
+                console.log('预计落点 index =', chosenIdx, '对应槽位数据:', slotsData[chosenIdx]["num"]);
                 spawnBallForIndex(chosenIdx);
             }
 
