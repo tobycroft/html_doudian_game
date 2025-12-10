@@ -372,11 +372,11 @@
             }
 
             /** ---------------- Pegs（柱子/钉子） ---------------- **/
-            const rows = 6;
-            const cols = 20;
-            const spacingX = width / cols + 10;
-            const spacingY = (height - slotHeight - 100) / rows - 10;
-            const radius = 6;
+            const rows = 7;
+            const cols = 24;
+            const spacingX = width / cols + 5;
+            const spacingY = (height - slotHeight - 100) / rows - 5;
+            const radius = 7;
 
             for (let r = 0; r < rows; r++) {
                 const isOdd = r % 2 !== 0;
@@ -449,7 +449,7 @@
             const ballRadius = Math.max(8, Math.min(14, Math.round(slotWidth * 0.11)));
             const ball = Bodies.circle(startX, 50, ballRadius, {
                 restitution: 0.18,
-                friction: 0.6,
+                friction: 0.8,
                 frictionStatic: 0.5,
                 frictionAir: 0.02,
                 density: 0.12,
