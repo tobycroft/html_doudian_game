@@ -372,11 +372,11 @@
             }
 
             /** ---------------- Pegs（柱子/钉子） ---------------- **/
-            const rows = 7;
-            const cols = 24;
-            const spacingX = width / cols + 5;
-            const spacingY = (height - slotHeight - 100) / rows - 5;
-            const radius = 7;
+            const rows = 6;
+            const cols = 18;
+            const spacingX = width / cols - 1;
+            const spacingY = (height - slotHeight - 100) / rows - 3;
+            const radius = 6;
 
             for (let r = 0; r < rows; r++) {
                 const isOdd = r % 2 !== 0;
@@ -385,8 +385,8 @@
 
                 for (let c = 0; c < count; c++) {
                     const peg = Bodies.circle(
-                        c * spacingX + offset + spacingX / 2 - 22,
-                        r * spacingY + 150,
+                        c * spacingX + offset + spacingX / 2 + 10,
+                        r * spacingY + 130,
                         radius,
                         {isStatic: true, render: {fillStyle: "#ffffff88"}}
                     );
@@ -446,13 +446,13 @@
             const targetX = idx * slotWidth + slotWidth / 2;
             const offsetRange = slotWidth * 0.6;
             const startX = targetX + (Math.random() - 0.5) * offsetRange;
-            const ballRadius = Math.max(8, Math.min(14, Math.round(slotWidth * 0.11)));
+            const ballRadius = Math.max(10, Math.min(14, Math.round(slotWidth * 0.11)));
             const ball = Bodies.circle(startX, 50, ballRadius, {
-                restitution: 0.18,
-                friction: 0.8,
-                frictionStatic: 0.5,
-                frictionAir: 0.02,
-                density: 0.12,
+                restitution: 1,
+                // friction: 0.8,
+                frictionStatic: 0.12,
+                frictionAir: 0.12,
+                density: 1,
                 render: {fillStyle: '#ff6fa4'}
             });
             ball.targetX = targetX;
@@ -469,7 +469,7 @@
                 if (ball.position.y < height - slotHeight - 12) {
                     const dx = ball.targetX - ball.position.x;
                     const heightFactor = Math.max(0.08, (ball.position.y / (height - slotHeight)));
-                    Body.applyForce(ball, ball.position, {x: dx * 0.000005 * heightFactor, y: 0});
+                    Body.applyForce(ball, ball.position, {x: dx * 0.0005 * heightFactor, y: 0});
                 }
                 // landing: if inside bottom region, zero velocity and snap
                 if (ball.position.y > height - slotHeight - 6) {
