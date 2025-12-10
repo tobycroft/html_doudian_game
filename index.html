@@ -124,7 +124,7 @@
     for (const i in btns) {
         if (btns[i].id) {
             document.getElementById(btns[i].id).addEventListener('click', (that) => {
-                window.location.href = that.target.id + '.html';
+                window.location.href = that.target.id + '.html?time=' + new Date().getTime();
             })
         } else {
             console.log(btns[i])
