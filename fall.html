@@ -169,6 +169,8 @@
         }
 
     </style>
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, orientation=landscape">
 </head>
 <body>
 
@@ -204,6 +206,13 @@
 
 <script src="https://cdn.jsdelivr.net/npm/matter-js/build/matter.min.js"></script>
 <script>
+    if (screen.orientation && screen.orientation.lock) {
+        screen.orientation.lock('landscape').then(() => {
+            console.log('屏幕锁定为横屏');
+        }).catch(err => {
+            console.warn('无法锁定屏幕:', err);
+        });
+    }
     (function () {
         const {Engine, Render, Runner, Bodies, Composite, Events, Body} = Matter;
 
