@@ -195,6 +195,9 @@
     <label style="color:#fff"></label>
     <button id="resetBalls" class="uiBtn">重开</button>
     <button id="dropBall" class="uiBtn" disabled>祝欧并掉落</button>
+    <button id="goFullScreen" class="uiBtn">
+        全屏并横屏
+    </button>
     <!--    </div>-->
 </div>
 
@@ -544,6 +547,16 @@
                 spawnBallForIndex(chosenIdx);
             }
 
+
+        }
+
+        // reset: remove balls (keep layout)
+        resetBtn.addEventListener('click', () => {
+            balls.forEach(b => Composite.remove(world, b));
+            balls = [];
+            resultDiv.textContent = '';
+            // re-enable drop if slotsData loaded
+            dropBtn.disabled = (slotsData.length === 0);
             // Immediately kick off background fetch to refresh slots for next round (non-blocking)
             (async () => {
                 try {
@@ -560,15 +573,6 @@
                     // keep current slotsData if refresh fails
                 }
             })();
-        }
-
-        // reset: remove balls (keep layout)
-        resetBtn.addEventListener('click', () => {
-            balls.forEach(b => Composite.remove(world, b));
-            balls = [];
-            resultDiv.textContent = '';
-            // re-enable drop if slotsData loaded
-            dropBtn.disabled = (slotsData.length === 0);
         });
 
         dropBtn.addEventListener('click', onDropClicked);
@@ -577,7 +581,32 @@
         preloadSlots(false);
 
     })();
+    document.getElementById('goFullScreen').addEventListener('click', async () => {
+        const elem = document.documentElement;
 
+        // 请求全屏
+        if (elem.requestFullscreen) {
+            try {
+                await elem.requestFullscreen();
+            } catch (e) {
+                console.warn('全屏失败:', e);
+            }
+        } else if (elem.webkitRequestFullscreen) {
+            await elem.webkitRequestFullscreen(); // Safari
+        }
+
+        // 尝试锁定横屏（移动端支持）
+        if (screen.orientation && screen.orientation.lock) {
+            try {
+                await screen.orientation.lock('landscape');
+            } catch (e) {
+                console.warn('横屏锁定失败:', e);
+            }
+        } else if (screen.lockOrientation) {
+            // 老式 API
+            screen.lockOrientation('landscape');
+        }
+    });
 </script>
 
 </body>
