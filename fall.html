@@ -161,6 +161,11 @@
             color: #8bc34a;
             font-weight: 700;
             z-index: 140;
+            background: rgba(255, 255, 255, 0.12);
+            backdrop-filter: blur(8px);
+            box-shadow: 0 6px 14px rgba(0, 0, 0, 0.08);
+            padding: 6px 6px;
+            border-radius: 0 0 12px 12px;
         }
 
     </style>
@@ -186,8 +191,8 @@
     </div>
     <!--    <div id="controls">-->
     <label style="color:#fff"></label>
-    <button id="dropBall" class="uiBtn" disabled>请求并掉落</button>
-    <button id="resetBalls" class="uiBtn">重新开始</button>
+    <button id="resetBalls" class="uiBtn">重开</button>
+    <button id="dropBall" class="uiBtn" disabled>祝欧并掉落</button>
     <!--    </div>-->
 </div>
 
@@ -369,7 +374,7 @@
             /** ---------------- Pegs（柱子/钉子） ---------------- **/
             const rows = 6;
             const cols = 20;
-            const spacingX = width / cols+1;
+            const spacingX = width / cols + 10;
             const spacingY = (height - slotHeight - 100) / rows - 10;
             const radius = 6;
 
@@ -380,7 +385,7 @@
 
                 for (let c = 0; c < count; c++) {
                     const peg = Bodies.circle(
-                        c * spacingX + offset + spacingX / 2-10,
+                        c * spacingX + offset + spacingX / 2 - 22,
                         r * spacingY + 150,
                         radius,
                         {isStatic: true, render: {fillStyle: "#ffffff88"}}
@@ -447,7 +452,7 @@
                 friction: 0.6,
                 frictionStatic: 0.5,
                 frictionAir: 0.02,
-                density: 0.02,
+                density: 0.12,
                 render: {fillStyle: '#ff6fa4'}
             });
             ball.targetX = targetX;
