@@ -200,7 +200,7 @@
 
 
 <div id="result"></div>
-<div class="hint">落地成盒模拟器</div>
+<div class="hint">弹簧柱模拟器</div>
 
 <script src="https://cdn.jsdelivr.net/npm/matter-js/build/matter.min.js"></script>
 <script>
@@ -446,12 +446,12 @@
             const targetX = idx * slotWidth + slotWidth / 2;
             const offsetRange = slotWidth * 0.6;
             const startX = targetX + (Math.random() - 0.5) * offsetRange;
-            const ballRadius = Math.max(10, Math.min(14, Math.round(slotWidth * 0.11)));
+            const ballRadius = Math.max(12, Math.min(14, Math.round(slotWidth * 0.11)));
             const ball = Bodies.circle(startX, 50, ballRadius, {
-                restitution: 1,
-                // friction: 0.8,
-                frictionStatic: 0.12,
-                frictionAir: 0.12,
+                restitution: 0.8,
+                friction: 0.15,
+                frictionStatic: 0.15,
+                frictionAir: 0.01,
                 density: 1,
                 render: {fillStyle: '#ff6fa4'}
             });
@@ -469,7 +469,7 @@
                 if (ball.position.y < height - slotHeight - 12) {
                     const dx = ball.targetX - ball.position.x;
                     const heightFactor = Math.max(0.08, (ball.position.y / (height - slotHeight)));
-                    Body.applyForce(ball, ball.position, {x: dx * 0.0005 * heightFactor, y: 0});
+                    Body.applyForce(ball, ball.position, {x: dx * 0.005 * heightFactor, y: 0.1});
                 }
                 // landing: if inside bottom region, zero velocity and snap
                 if (ball.position.y > height - slotHeight - 6) {
