@@ -318,11 +318,11 @@
                     ctx.fillText(String(slotsData[i].num), x, y);
                     if (Number(slotsData[i].is_lock) === 1) {
                         // small lock dot to indicate locked
-                        ctx.fillStyle = 'rgba(255,255,255,0.95)';
+                        ctx.fillStyle = 'rgba(200,200,200,0.95)';
                         ctx.beginPath();
                         ctx.arc(x + slotWidth / 2 - 18, y - slotHeight / 2 + 16, 7, 0, Math.PI * 2);
                         ctx.fill();
-                        ctx.fillStyle = '#fff';
+                        ctx.fillStyle = '#000';
                     }
                 }
             }
