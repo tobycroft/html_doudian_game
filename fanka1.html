@@ -1,267 +1,287 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>九宫格翻包</title>
+    <title>抽卡小游戏</title>
 
     <style>
         body {
             margin: 0;
-            background: #f2f2f2;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            padding: 12px;
+            font-family: system-ui, -apple-system;
+            background: #f5f6fa;
+        }
+
+        .pack-container {
+            backdrop-filter: blur(12px);
+            background: rgba(255,255,255,0.65);
+            border-radius: 16px;
+            padding: 12px;
+            margin-bottom: 12px;
+        }
+
+        .pack-container strong {
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        .pack-buttons {
             display: flex;
-            flex-direction: column;
-            align-items: center;
+            gap: 10px;
+            justify-content: center;
         }
 
-        /* ===== 包数选择容器 ===== */
-        .package-container {
-            margin: 16px;
-            padding: 12px 16px;
-            border-radius: 14px;
-            background: rgba(255, 255, 255, 0.6);
-            backdrop-filter: blur(10px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .package-label {
-            font-size: 18px;
-            font-weight: 600;
-        }
-
-        .top-bar button {
+        .pack-buttons button {
             font-size: 20px;
-            padding: 8px 14px;
-            margin: 0 4px;
-            border-radius: 8px;
+            padding: 10px 16px;
+            border-radius: 10px;
             border: none;
             background: #ddd;
         }
 
-        .top-bar button.active {
-            background: #4e54c8;
+        .pack-buttons button.active {
+            background: #4a90e2;
             color: #fff;
         }
 
-        /* ===== 卡片 ===== */
-        .game {
+        .grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             gap: 12px;
-            width: 92vw;
-            max-width: 360px;
+            margin: 16px 0;
         }
 
         .card {
-            aspect-ratio: 1 / 1;
-            perspective: 1000px;
+            perspective: 900px;
         }
 
         .card-inner {
-            width: 100%;
-            height: 100%;
             position: relative;
+            width: 100%;
+            padding-top: 100%;
             transform-style: preserve-3d;
-            transition: transform 0.6s ease;
+            transition: transform 0.6s;
         }
 
         .card.open .card-inner {
             transform: rotateY(180deg);
         }
 
-        .card-face {
+        .face {
             position: absolute;
-            width: 100%;
-            height: 100%;
-            border-radius: 14px;
+            inset: 0;
             display: flex;
             align-items: center;
             justify-content: center;
+            font-size: 34px;
+            border-radius: 14px;
             backface-visibility: hidden;
-            font-size: 44px;
-            font-weight: bold;
         }
 
-        .card-back {
-            background: linear-gradient(135deg, #6a6ff2, #8f94fb);
+        .back {
+            background: #888;
             color: #fff;
         }
 
-        .card-front {
+        .front {
             background: #fff;
-            color: #333;
+            border: 2px solid #4a90e2;
             transform: rotateY(180deg);
         }
 
-        .card.selected .card-back,
-        .card.selected .card-front {
-            box-shadow: 0 0 0 4px #ff9800 inset;
+        .card.selected .back {
+            background: #ffd54f;
+            color: #000;
         }
 
-        /* ===== 按钮 ===== */
-        .button-area {
-            width: 90%;
-            max-width: 360px;
-            margin-top: 16px;
+        .card.selected .front {
+            background: #ffe08a;
         }
 
-        .button-area button {
-            width: 100%;
+        .actions {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .actions button {
+            font-size: 22px;
             padding: 14px;
-            font-size: 20px;
-            border-radius: 10px;
+            border-radius: 16px;
             border: none;
         }
 
-        #openBtn {
-            background: #2196f3;
+        .confirm {
+            background: #4a90e2;
             color: #fff;
-            margin-bottom: 10px;
         }
 
-        #resetBtn {
-            background: #f3b3b3;
-            color: #6b1c1c;
+        .reset {
+            background: #f5b7b1;
         }
 
-        /* ===== 上次结果 ===== */
-        .last-result {
-            margin: 12px;
-            font-size: 16px;
-            text-align: center;
+        .result-box {
+            margin-top: 12px;
+            font-size: 18px;
         }
     </style>
 </head>
 
 <body>
 
-<div class="package-container">
-    <div class="package-label">选择包数</div>
-    <div class="top-bar">
-        <button data-count="1">1</button>
-        <button data-count="2">2</button>
-        <button data-count="3">3</button>
-        <button data-count="5">5</button>
-    </div>
+<div class="pack-container">
+    <strong>选择包数</strong>
+    <div class="pack-buttons" id="packBtns"></div>
 </div>
 
-<div class="game" id="game"></div>
+<div class="grid" id="grid"></div>
 
-<div class="button-area">
-    <button id="openBtn">确定并打开</button>
-    <button id="resetBtn">再抽一次</button>
+<div class="actions">
+    <button class="confirm" onclick="confirmOpen()">确定并打开</button>
+    <button class="reset" onclick="resetGame()">再抽一次</button>
 </div>
 
-<div class="last-result" id="lastResult"></div>
+<div class="result-box">
+    上一次抽取结果：
+    <span id="lastResult">无</span>
+</div>
 
 <script>
-    /* ===== 工具 ===== */
-    function shuffle(arr) {
-        const a = [...arr];
-        for (let i = a.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [a[i], a[j]] = [a[j], a[i]];
-        }
-        return a;
-    }
-
-    /* ===== 抽取规则配置区 ===== */
-    const HIT_POOL = [2, 1, 2, 2, 1];
-    const NORMAL_POOL = [5, 4, 3, 1, 2, 4, 3];
+    /* ===== 配置 ===== */
+    const API_URL = "https://upload.tuuz.cc:444/v2/doudian/game/fanka";
 
     /* ===== 状态 ===== */
-    let maxSelect = 1;
-    let selectedCards = [];
+    let packCount = 1;
+    let selected = [];
     let opened = false;
+    let lastResult = [];
 
-    const game = document.getElementById("game");
-    const buttons = document.querySelectorAll(".top-bar button");
-    const lastResult = document.getElementById("lastResult");
+    /* 默认池 */
+    let NORMAL_POOL = [5,2,1,2,4,3,1,2,1];
+    let HIT_CONF = {
+        1:0.3,2:0.3,3:0.2,4:0.1,5:0.1,
+        max:3,
+        lock:1
+    };
 
-    /* ===== 初始化卡片 ===== */
-    for (let i = 0; i < 9; i++) {
-        const card = document.createElement("div");
-        card.className = "card";
-        card.innerHTML = `
-        <div class="card-inner">
-            <div class="card-face card-back">?</div>
-            <div class="card-face card-front"></div>
-        </div>
-    `;
+    /* ===== 初始化 ===== */
+    initPackButtons();
+    fetchRemote();
 
-        card.onclick = () => {
-            if (opened) return;
+    /* ===== 包数按钮 ===== */
+    function initPackButtons() {
+        const box = document.getElementById("packBtns");
+        [1,2,3,5].forEach(n => {
+            const btn = document.createElement("button");
+            btn.textContent = n;
+            if (n === 1) btn.classList.add("active");
 
-            if (card.classList.contains("selected")) {
-                card.classList.remove("selected");
-                selectedCards = selectedCards.filter(c => c !== card);
-            } else {
-                if (selectedCards.length >= maxSelect) return;
-                card.classList.add("selected");
-                selectedCards.push(card);
-            }
-        };
-
-        game.appendChild(card);
+            btn.onclick = () => {
+                packCount = n;
+                document.querySelectorAll(".pack-buttons button")
+                    .forEach(b => b.classList.remove("active"));
+                btn.classList.add("active");
+            };
+            box.appendChild(btn);
+        });
     }
 
-    /* 默认选中 1 包 */
-    buttons[0].classList.add("active");
+    /* ===== 构建卡片 ===== */
+    function buildCards() {
+        const grid = document.getElementById("grid");
+        grid.innerHTML = "";
+        selected = [];
+        opened = false;
 
-    /* 包数选择 */
-    buttons.forEach(btn => {
-        btn.onclick = () => {
-            buttons.forEach(b => b.classList.remove("active"));
-            btn.classList.add("active");
-            maxSelect = Number(btn.dataset.count);
+        NORMAL_POOL.forEach((v, i) => {
+            const card = document.createElement("div");
+            card.className = "card";
+            card.innerHTML = `
+            <div class="card-inner">
+                <div class="face back">?</div>
+                <div class="face front">${v}</div>
+            </div>
+        `;
+            card.onclick = () => toggleSelect(card, i);
+            grid.appendChild(card);
+        });
+    }
 
-            selectedCards.forEach(c => c.classList.remove("selected"));
-            selectedCards = [];
-        };
-    });
+    /* ===== 选中逻辑 ===== */
+    function toggleSelect(card, idx) {
+        if (opened) return;
 
-    /* ===== 打开（强制必中） ===== */
-    document.getElementById("openBtn").onclick = () => {
-        if (opened || selectedCards.length === 0) return;
+        if (selected.includes(idx)) {
+            selected = selected.filter(i => i !== idx);
+            card.classList.remove("selected");
+        } else {
+            if (selected.length >= packCount) return;
+            selected.push(idx);
+            card.classList.add("selected");
+        }
+    }
+
+    /* ===== 权重随机 ===== */
+    function weightedRand() {
+        let pool = [];
+        Object.entries(HIT_CONF).forEach(([k,v])=>{
+            if (+k > 0 && typeof v === "number") {
+                for (let i=0;i<v*100;i++) pool.push(+k);
+            }
+        });
+        let r = pool[Math.floor(Math.random()*pool.length)] || 0;
+        if (HIT_CONF.lock && r > HIT_CONF.max) return HIT_CONF.max;
+        return r;
+    }
+
+    /* ===== 确认并打开 ===== */
+    function confirmOpen() {
+        if (opened) return;
         opened = true;
 
-        const hitValues = shuffle(HIT_POOL).slice(0, selectedCards.length);
-        const normalValues = shuffle(NORMAL_POOL);
+        document.getElementById("lastResult").textContent =
+            lastResult.length ? lastResult.join(", ") : "无";
 
-        let hitIdx = 0;
-        let normalIdx = 0;
-        const hitResult = [];
+        lastResult = [];
 
-        document.querySelectorAll(".card").forEach(card => {
-            const front = card.querySelector(".card-front");
-
-            if (card.classList.contains("selected")) {
-                const v = hitValues[hitIdx++];
-                front.textContent = v;
-                hitResult.push(v);
-            } else {
-                front.textContent = normalValues[normalIdx++] ?? "";
-            }
-
+        document.querySelectorAll(".card").forEach((card, idx) => {
             card.classList.add("open");
+            if (selected.includes(idx)) {
+                const r = weightedRand();
+                card.querySelector(".front").textContent = r;
+                lastResult.push(r);
+            }
         });
-
-        lastResult.textContent = "上一次抽取结果：" + hitResult.join(" , ");
-    };
+    }
 
     /* ===== 再抽一次 ===== */
-    document.getElementById("resetBtn").onclick = () => {
-        opened = false;
-        selectedCards = [];
+    function resetGame() {
+        fetchRemote();
+    }
 
-        document.querySelectorAll(".card").forEach(card => {
-            card.classList.remove("open", "selected");
-        });
-    };
+    /* ===== 拉取远程池 ===== */
+    function fetchRemote() {
+        fetch(API_URL, {
+            method: "POST",
+            headers: {"Content-Type":"application/x-www-form-urlencoded"},
+            body: "pack=3"
+        })
+            .then(r=>r.json())
+            .then(res=>{
+                if (res.code === 0 && res.data.length) {
+                    const d = res.data[0];
+                    NORMAL_POOL = [d.p1,d.p2,d.p3,d.p4,d.p5,d.p6,d.p7,d.p8,d.p9];
+                    HIT_CONF = {
+                        1:d.rand1,2:d.rand2,3:d.rand3,4:d.rand4,5:d.rand5,
+                        max:d.max_at,
+                        lock:d.lock_at_max
+                    };
+                }
+                buildCards();
+            })
+            .catch(()=>buildCards());
+    }
 </script>
 
 </body>
