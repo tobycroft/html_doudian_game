@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>抽卡小游戏</title>
+
+    <style>
+        body {
+            margin: 0;
+            padding: 12px;
+            font-family: system-ui, -apple-system;
+            background: #f5f6fa;
+        }
+
+        .pack-container {
+            backdrop-filter: blur(12px);
+            background: rgba(255,255,255,0.65);
+            border-radius: 16px;
+            padding: 12px;
+            margin-bottom: 12px;
+        }
+
+        .pack-container strong {
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        .pack-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .pack-buttons button {
+            font-size: 20px;
+            padding: 10px 16px;
+            border-radius: 10px;
+            border: none;
+            background: #ddd;
+        }
+
+        .pack-buttons button.active {
+            background: #4a90e2;
+            color: #fff;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin: 16px 0;
+        }
+
+        .card {
+            perspective: 900px;
+        }
+
+        .card-inner {
+            position: relative;
+            width: 100%;
+            padding-top: 100%;
+            transform-style: preserve-3d;
+            transition: transform 0.6s;
+        }
+
+        .card.open .card-inner {
+            transform: rotateY(180deg);
+        }
+
+        .face {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 34px;
+            border-radius: 14px;
+            backface-visibility: hidden;
+        }
+
+        .back {
+            background: #888;
+            color: #fff;
+        }
+
+        .front {
+            background: #fff;
+            border: 2px solid #4a90e2;
+            transform: rotateY(180deg);
+        }
+
+        .card.selected .back {
+            background: #ffd54f;
+            color: #000;
+        }
+
+        .card.selected .front {
+            background: #ffe08a;
+        }
+
+        .actions {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .actions button {
+            font-size: 22px;
+            padding: 14px;
+            border-radius: 16px;
+            border: none;
+        }
+
+        .confirm {
+            background: #4a90e2;
+            color: #fff;
+        }
+
+        .reset {
+            background: #f5b7b1;
+        }
+
+        .result-box {
+            margin-top: 12px;
+            font-size: 18px;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="pack-container">
+    <strong>连包数量</strong>
+    <div class="pack-buttons" id="packBtns"></div>
+</div>
+
+<div class="grid" id="grid"></div>
+
+<div class="actions">
+    <button class="confirm" onclick="confirmOpen()">确定并打开</button>
+    <button class="reset" onclick="resetGame()">再抽一次</button>
+</div>
+
+<div class="result-box">
+    上一次抽取结果：
+    <span id="lastResult">无</span>
+</div>
+
+<script>
+    /* ===== 配置 ===== */
+    const API_URL = "https://upload.tuuz.cc:444/v2/doudian/game/fanka";
+
+    /* ===== 状态 ===== */
+    let packCount = 1;
+    let selected = [];
+    let opened = false;
+    let lastResult = [];
+
+    /* 默认池 */
+    let NORMAL_POOL = [5,2,1,2,4,3,1,2,1];
+    let HIT_CONF = {
+        1:0.3,2:0.3,3:0.2,4:0.1,5:0.1,
+        max:3,
+        lock:1
+    };
+
+    /* ===== 初始化 ===== */
+    initPackButtons();
+    fetchRemote();
+
+    /* ===== 包数按钮 ===== */
+    function initPackButtons() {
+        const box = document.getElementById("packBtns");
+        [1,2,3,5].forEach(n => {
+            const btn = document.createElement("button");
+            btn.textContent = n;
+            if (n === 1) btn.classList.add("active");
+
+            btn.onclick = () => {
+                packCount = n;
+                document.querySelectorAll(".pack-buttons button")
+                    .forEach(b => b.classList.remove("active"));
+                btn.classList.add("active");
+            };
+            box.appendChild(btn);
+        });
+    }
+
+    /* ===== 构建卡片 ===== */
+    function buildCards() {
+        const grid = document.getElementById("grid");
+        grid.innerHTML = "";
+        selected = [];
+        opened = false;
+
+        NORMAL_POOL.forEach((v, i) => {
+            const card = document.createElement("div");
+            card.className = "card";
+            card.innerHTML = `
+            <div class="card-inner">
+                <div class="face back">?</div>
+                <div class="face front">${v}</div>
+            </div>
+        `;
+            card.onclick = () => toggleSelect(card, i);
+            grid.appendChild(card);
+        });
+    }
+
+    /* ===== 选中逻辑 ===== */
+    function toggleSelect(card, idx) {
+        if (opened) return;
+
+        if (selected.includes(idx)) {
+            selected = selected.filter(i => i !== idx);
+            card.classList.remove("selected");
+        } else {
+            if (selected.length >= packCount) return;
+            selected.push(idx);
+            card.classList.add("selected");
+        }
+    }
+
+    /* ===== 权重随机 ===== */
+    function weightedRand() {
+        let pool = [];
+        Object.entries(HIT_CONF).forEach(([k,v])=>{
+            if (+k > 0 && typeof v === "number") {
+                for (let i=0;i<v*100;i++) pool.push(+k);
+            }
+        });
+        let r = pool[Math.floor(Math.random()*pool.length)] || 0;
+        if (HIT_CONF.lock && r > HIT_CONF.max) return HIT_CONF.max;
+        return r;
+    }
+
+    /* ===== 确认并打开 ===== */
+    function confirmOpen() {
+        if (opened) return;
+        opened = true;
+
+        document.getElementById("lastResult").textContent =
+            lastResult.length ? lastResult.join(", ") : "无";
+
+        lastResult = [];
+
+        document.querySelectorAll(".card").forEach((card, idx) => {
+            card.classList.add("open");
+            if (selected.includes(idx)) {
+                const r = weightedRand();
+                card.querySelector(".front").textContent = r;
+                lastResult.push(r);
+            }
+        });
+    }
+
+    /* ===== 再抽一次 ===== */
+    function resetGame() {
+        fetchRemote();
+    }
+
+    /* ===== 拉取远程池 ===== */
+    function fetchRemote() {
+        fetch(API_URL, {
+            method: "POST",
+            headers: {"Content-Type":"application/x-www-form-urlencoded"},
+            body: "pack=2"
+        })
+            .then(r=>r.json())
+            .then(res=>{
+                if (res.code === 0 && res.data.length) {
+                    const d = res.data[0];
+                    NORMAL_POOL = [d.p1,d.p2,d.p3,d.p4,d.p5,d.p6,d.p7,d.p8,d.p9];
+                    HIT_CONF = {
+                        1:d.rand1,2:d.rand2,3:d.rand3,4:d.rand4,5:d.rand5,
+                        max:d.max_at,
+                        lock:d.lock_at_max
+                    };
+                }
+                buildCards();
+            })
+            .catch(()=>buildCards());
+    }
+</script>
+
+</body>
+</html>
