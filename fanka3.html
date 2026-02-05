@@ -245,13 +245,90 @@
 
         lastResult = [];
 
-        document.querySelectorAll(".card").forEach((card, idx) => {
-            card.classList.add("open");
-            if (selected.includes(idx)) {
-                const r = weightedRand();
-                card.querySelector(".front").textContent = r;
-                lastResult.push(r);
+        // 获取所有卡片元素
+        const cards = document.querySelectorAll(".card");
+
+        // 生成选中卡片的随机结果
+        const selectedResults = [];
+        // 跟踪选中卡片中各数字的出现次数
+        const selectedCounts = {3: 0, 4: 0, 5: 0};
+
+        selected.forEach(idx => {
+            const r = weightedRand();
+            selectedResults.push({ idx, value: r });
+            lastResult.push(r);
+            // 统计选中卡片中3、4、5的出现次数
+            if (r === 3) selectedCounts[3]++;
+            if (r === 4) selectedCounts[4]++;
+            if (r === 5) selectedCounts[5]++;
+        });
+
+        // 获取未选中的卡片索引
+        const unselectedIndices = [];
+        for (let i = 0; i < NORMAL_POOL.length; i++) {
+            if (!selected.includes(i)) {
+                unselectedIndices.push(i);
             }
+        }
+
+        // 统计原始池中3、4、5的出现次数
+        const poolCounts = {
+            3: NORMAL_POOL.filter(v => v === 3).length,
+            4: NORMAL_POOL.filter(v => v === 4).length,
+            5: NORMAL_POOL.filter(v => v === 5).length
+        };
+
+        // 跟踪未选中区域中各数字的放置情况
+        const unselectedPlaced = {3: 0, 4: 0, 5: 0};
+
+        // 按优先级处理5、4、3
+        const priorityNumbers = [5, 4, 3];
+        priorityNumbers.forEach(num => {
+            // 如果原始池中有该数字，且选中的卡片中出现次数少于原始池中的次数
+            if (poolCounts[num] > 0 && selectedCounts[num] < poolCounts[num]) {
+                // 需要在未选中区域放置的数量
+                const needToPlace = poolCounts[num] - selectedCounts[num];
+
+                for (let i = 0; i < needToPlace && unselectedIndices.length > 0; i++) {
+                    // 找出最大的未选中索引
+                    const maxUnselectedIdx = Math.max(...unselectedIndices);
+                    // 将数字放在最大的未选中索引位置
+                    cards[maxUnselectedIdx].querySelector(".front").textContent = num;
+                    unselectedPlaced[num]++;
+                    // 从可用索引中移除这个位置
+                    const indexToRemove = unselectedIndices.indexOf(maxUnselectedIdx);
+                    if (indexToRemove > -1) {
+                        unselectedIndices.splice(indexToRemove, 1);
+                    }
+                }
+            }
+        });
+
+        // 为剩余的未选中卡片分配原始值（从高到低排序）
+        const remainingValues = NORMAL_POOL
+            .filter(v => {
+                // 如果是3、4、5，且已经在未选中区域放置了足够的数量，则排除
+                if ([3, 4, 5].includes(v)) {
+                    return unselectedPlaced[v] < poolCounts[v];
+                }
+                return true;
+            })
+            .sort((a, b) => b - a); // 从高到低排序
+
+        unselectedIndices.forEach((idx, i) => {
+            if (i < remainingValues.length) {
+                cards[idx].querySelector(".front").textContent = remainingValues[i];
+            }
+        });
+
+        // 为选中的卡片分配随机结果
+        selectedResults.forEach(({ idx, value }) => {
+            cards[idx].querySelector(".front").textContent = value;
+        });
+
+        // 打开所有卡片
+        cards.forEach(card => {
+            card.classList.add("open");
         });
     }
 
