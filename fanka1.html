@@ -1,27 +1,58 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>翻卡小游戏</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>九宫格翻包</title>
 
     <style>
         body {
             margin: 0;
-            padding: 0;
-            background: #f5f5f5;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
+            background: #f2f2f2;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
 
+        /* ===== 包数选择容器 ===== */
+        .package-container {
+            margin: 16px;
+            padding: 12px 16px;
+            border-radius: 14px;
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .package-label {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .top-bar button {
+            font-size: 20px;
+            padding: 8px 14px;
+            margin: 0 4px;
+            border-radius: 8px;
+            border: none;
+            background: #ddd;
+        }
+
+        .top-bar button.active {
+            background: #4e54c8;
+            color: #fff;
+        }
+
+        /* ===== 卡片 ===== */
         .game {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             gap: 12px;
-            width: 90vw;
+            width: 92vw;
             max-width: 360px;
         }
 
@@ -31,14 +62,14 @@
         }
 
         .card-inner {
-            position: relative;
             width: 100%;
             height: 100%;
+            position: relative;
             transform-style: preserve-3d;
             transition: transform 0.6s ease;
         }
 
-        .card.flipped .card-inner {
+        .card.open .card-inner {
             transform: rotateY(180deg);
         }
 
@@ -46,62 +77,191 @@
             position: absolute;
             width: 100%;
             height: 100%;
-            backface-visibility: hidden;
-            border-radius: 12px;
+            border-radius: 14px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 28px;
+            backface-visibility: hidden;
+            font-size: 44px;
             font-weight: bold;
         }
 
         .card-back {
-            background: linear-gradient(135deg, #4e54c8, #8f94fb);
-            color: white;
+            background: linear-gradient(135deg, #6a6ff2, #8f94fb);
+            color: #fff;
         }
 
         .card-front {
-            background: white;
+            background: #fff;
             color: #333;
             transform: rotateY(180deg);
-            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+        }
+
+        .card.selected .card-back,
+        .card.selected .card-front {
+            box-shadow: 0 0 0 4px #ff9800 inset;
+        }
+
+        /* ===== 按钮 ===== */
+        .button-area {
+            width: 90%;
+            max-width: 360px;
+            margin-top: 16px;
+        }
+
+        .button-area button {
+            width: 100%;
+            padding: 14px;
+            font-size: 20px;
+            border-radius: 10px;
+            border: none;
+        }
+
+        #openBtn {
+            background: #2196f3;
+            color: #fff;
+            margin-bottom: 10px;
+        }
+
+        #resetBtn {
+            background: #f3b3b3;
+            color: #6b1c1c;
+        }
+
+        /* ===== 上次结果 ===== */
+        .last-result {
+            margin: 12px;
+            font-size: 16px;
+            text-align: center;
         }
     </style>
 </head>
 
 <body>
 
+<div class="package-container">
+    <div class="package-label">选择包数</div>
+    <div class="top-bar">
+        <button data-count="1">1</button>
+        <button data-count="2">2</button>
+        <button data-count="3">3</button>
+        <button data-count="5">5</button>
+    </div>
+</div>
+
 <div class="game" id="game"></div>
 
+<div class="button-area">
+    <button id="openBtn">确定并打开</button>
+    <button id="resetBtn">再抽一次</button>
+</div>
+
+<div class="last-result" id="lastResult"></div>
+
 <script>
-    // 你可以在这里自定义卡牌内容
-    const cardValues = [
-        "1", "2", "3",
-        "奖品", "谢谢", "再来",
-        "A", "B", "C"
-    ];
+    /* ===== 工具 ===== */
+    function shuffle(arr) {
+        const a = [...arr];
+        for (let i = a.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [a[i], a[j]] = [a[j], a[i]];
+        }
+        return a;
+    }
+
+    /* ===== 抽取规则配置区 ===== */
+    const HIT_POOL = [2, 1, 2, 2, 1];
+    const NORMAL_POOL = [5, 4, 3, 1, 2, 4, 3];
+
+    /* ===== 状态 ===== */
+    let maxSelect = 1;
+    let selectedCards = [];
+    let opened = false;
 
     const game = document.getElementById("game");
+    const buttons = document.querySelectorAll(".top-bar button");
+    const lastResult = document.getElementById("lastResult");
 
-    cardValues.forEach(value => {
+    /* ===== 初始化卡片 ===== */
+    for (let i = 0; i < 9; i++) {
         const card = document.createElement("div");
         card.className = "card";
-
         card.innerHTML = `
-            <div class="card-inner">
-                <div class="card-face card-back">?</div>
-                <div class="card-face card-front">${value}</div>
-            </div>
-        `;
+        <div class="card-inner">
+            <div class="card-face card-back">?</div>
+            <div class="card-face card-front"></div>
+        </div>
+    `;
 
-        card.addEventListener("click", () => {
-            if (!card.classList.contains("flipped")) {
-                card.classList.add("flipped");
+        card.onclick = () => {
+            if (opened) return;
+
+            if (card.classList.contains("selected")) {
+                card.classList.remove("selected");
+                selectedCards = selectedCards.filter(c => c !== card);
+            } else {
+                if (selectedCards.length >= maxSelect) return;
+                card.classList.add("selected");
+                selectedCards.push(card);
             }
-        });
+        };
 
         game.appendChild(card);
+    }
+
+    /* 默认选中 1 包 */
+    buttons[0].classList.add("active");
+
+    /* 包数选择 */
+    buttons.forEach(btn => {
+        btn.onclick = () => {
+            buttons.forEach(b => b.classList.remove("active"));
+            btn.classList.add("active");
+            maxSelect = Number(btn.dataset.count);
+
+            selectedCards.forEach(c => c.classList.remove("selected"));
+            selectedCards = [];
+        };
     });
+
+    /* ===== 打开（强制必中） ===== */
+    document.getElementById("openBtn").onclick = () => {
+        if (opened || selectedCards.length === 0) return;
+        opened = true;
+
+        const hitValues = shuffle(HIT_POOL).slice(0, selectedCards.length);
+        const normalValues = shuffle(NORMAL_POOL);
+
+        let hitIdx = 0;
+        let normalIdx = 0;
+        const hitResult = [];
+
+        document.querySelectorAll(".card").forEach(card => {
+            const front = card.querySelector(".card-front");
+
+            if (card.classList.contains("selected")) {
+                const v = hitValues[hitIdx++];
+                front.textContent = v;
+                hitResult.push(v);
+            } else {
+                front.textContent = normalValues[normalIdx++] ?? "";
+            }
+
+            card.classList.add("open");
+        });
+
+        lastResult.textContent = "上一次抽取结果：" + hitResult.join(" , ");
+    };
+
+    /* ===== 再抽一次 ===== */
+    document.getElementById("resetBtn").onclick = () => {
+        opened = false;
+        selectedCards = [];
+
+        document.querySelectorAll(".card").forEach(card => {
+            card.classList.remove("open", "selected");
+        });
+    };
 </script>
 
 </body>
