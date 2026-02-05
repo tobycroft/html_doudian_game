@@ -157,12 +157,12 @@
     let opened = false;
     let lastResult = [];
 
-    /* 默认池 */
-    let NORMAL_POOL = [5,2,1,2,4,3,1,2,1];
+    /* 默认池 - 新增rand6支持 */
+    let NORMAL_POOL = [9,6,5,4,3,3,3,3,3];
     let HIT_CONF = {
-        1:0.3,2:0.3,3:0.2,4:0.1,5:0.1,
+        1:0,2:0,3:0.7,4:0.3,5:0.15,6:0.05,
         max:3,
-        lock:1
+        lock:0
     };
 
     /* ===== 初始化 ===== */
@@ -222,7 +222,7 @@
         }
     }
 
-    /* ===== 权重随机 ===== */
+    /* ===== 权重随机 - 新增rand6支持数字6 ===== */
     function weightedRand() {
         let pool = [];
         Object.entries(HIT_CONF).forEach(([k,v])=>{
@@ -235,35 +235,42 @@
         return r;
     }
 
+    /* ===== 数组随机打乱（Fisher-Yates 洗牌算法）===== */
+    function shuffleArray(array) {
+        const newArray = [...array];
+        for (let i = newArray.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+        }
+        return newArray;
+    }
+
     /* ===== 确认并打开 ===== */
     function confirmOpen() {
         if (opened) return;
         opened = true;
 
+        // 更新上一次结果显示
         document.getElementById("lastResult").textContent =
             lastResult.length ? lastResult.join(", ") : "无";
-
         lastResult = [];
 
         // 获取所有卡片元素
         const cards = document.querySelectorAll(".card");
 
-        // 生成选中卡片的随机结果
+        // 1. 生成选中卡片的随机结果
         const selectedResults = [];
-        // 跟踪选中卡片中各数字的出现次数
-        const selectedCounts = {3: 0, 4: 0, 5: 0};
-
         selected.forEach(idx => {
             const r = weightedRand();
             selectedResults.push({ idx, value: r });
             lastResult.push(r);
-            // 统计选中卡片中3、4、5的出现次数
-            if (r === 3) selectedCounts[3]++;
-            if (r === 4) selectedCounts[4]++;
-            if (r === 5) selectedCounts[5]++;
         });
 
-        // 获取未选中的卡片索引
+        // 2. 核心逻辑：提取p1-p9的所有数值，保证高优先级数字（p1/p2/p3）必现
+        // 2.1 复制原始池数值（保留p1-p9的完整数值列表）
+        const originalValues = [...NORMAL_POOL];
+
+        // 2.2 获取未选中卡片的索引列表
         const unselectedIndices = [];
         for (let i = 0; i < NORMAL_POOL.length; i++) {
             if (!selected.includes(i)) {
@@ -271,62 +278,44 @@
             }
         }
 
-        // 统计原始池中3、4、5的出现次数
-        const poolCounts = {
-            3: NORMAL_POOL.filter(v => v === 3).length,
-            4: NORMAL_POOL.filter(v => v === 4).length,
-            5: NORMAL_POOL.filter(v => v === 5).length
-        };
-
-        // 跟踪未选中区域中各数字的放置情况
-        const unselectedPlaced = {3: 0, 4: 0, 5: 0};
-
-        // 按优先级处理5、4、3
-        const priorityNumbers = [5, 4, 3];
-        priorityNumbers.forEach(num => {
-            // 如果原始池中有该数字，且选中的卡片中出现次数少于原始池中的次数
-            if (poolCounts[num] > 0 && selectedCounts[num] < poolCounts[num]) {
-                // 需要在未选中区域放置的数量
-                const needToPlace = poolCounts[num] - selectedCounts[num];
-
-                for (let i = 0; i < needToPlace && unselectedIndices.length > 0; i++) {
-                    // 找出最大的未选中索引
-                    const maxUnselectedIdx = Math.max(...unselectedIndices);
-                    // 将数字放在最大的未选中索引位置
-                    cards[maxUnselectedIdx].querySelector(".front").textContent = num;
-                    unselectedPlaced[num]++;
-                    // 从可用索引中移除这个位置
-                    const indexToRemove = unselectedIndices.indexOf(maxUnselectedIdx);
-                    if (indexToRemove > -1) {
-                        unselectedIndices.splice(indexToRemove, 1);
-                    }
-                }
+        // 2.3 从原始数值中筛选出与未选中卡片数量匹配的数值（优先保留p1-p9的高优先级值）
+        // 确保p1(9)、p2(6)、p3(5)等大数字一定会被保留
+        let unselectedValues = [];
+        if (originalValues.length >= unselectedIndices.length) {
+            // 取前N个（按p1-p9顺序）保证高优先级数值优先
+            unselectedValues = originalValues.slice(0, unselectedIndices.length);
+        } else {
+            // 极端情况：补充默认值（实际不会触发，因为都是9个数值）
+            unselectedValues = [...originalValues];
+            while (unselectedValues.length < unselectedIndices.length) {
+                unselectedValues.push(1);
             }
-        });
+        }
 
-        // 为剩余的未选中卡片分配原始值（从高到低排序）
-        const remainingValues = NORMAL_POOL
-            .filter(v => {
-                // 如果是3、4、5，且已经在未选中区域放置了足够的数量，则排除
-                if ([3, 4, 5].includes(v)) {
-                    return unselectedPlaced[v] < poolCounts[v];
-                }
-                return true;
-            })
-            .sort((a, b) => b - a); // 从高到低排序
+        // 2.4 随机打乱未选中数值的顺序（位置随机，数值保留）
+        const shuffledUnselectedValues = shuffleArray(unselectedValues);
 
+        // 2.5 建立未选中索引和打乱后数值的映射
+        const unselectedValueMap = {};
         unselectedIndices.forEach((idx, i) => {
-            if (i < remainingValues.length) {
-                cards[idx].querySelector(".front").textContent = remainingValues[i];
+            unselectedValueMap[idx] = shuffledUnselectedValues[i];
+        });
+
+        // 3. 为所有卡片设置显示值
+        for (let i = 0; i < NORMAL_POOL.length; i++) {
+            const card = cards[i];
+            // 选中卡片：使用随机生成的值
+            if (selected.includes(i)) {
+                const result = selectedResults.find(item => item.idx === i);
+                card.querySelector(".front").textContent = result.value;
             }
-        });
+            // 未选中卡片：使用保留高优先级数值且随机打乱后的值
+            else {
+                card.querySelector(".front").textContent = unselectedValueMap[i];
+            }
+        }
 
-        // 为选中的卡片分配随机结果
-        selectedResults.forEach(({ idx, value }) => {
-            cards[idx].querySelector(".front").textContent = value;
-        });
-
-        // 打开所有卡片
+        // 4. 打开所有卡片
         cards.forEach(card => {
             card.classList.add("open");
         });
@@ -337,7 +326,7 @@
         fetchRemote();
     }
 
-    /* ===== 拉取远程池 ===== */
+    /* ===== 拉取远程池 - 适配rand6 ===== */
     function fetchRemote() {
         fetch(API_URL, {
             method: "POST",
@@ -348,11 +337,18 @@
             .then(res=>{
                 if (res.code === 0 && res.data.length) {
                     const d = res.data[0];
+                    // 更新p1-p9
                     NORMAL_POOL = [d.p1,d.p2,d.p3,d.p4,d.p5,d.p6,d.p7,d.p8,d.p9];
+                    // 更新随机配置，新增rand6
                     HIT_CONF = {
-                        1:d.rand1,2:d.rand2,3:d.rand3,4:d.rand4,5:d.rand5,
-                        max:d.max_at,
-                        lock:d.lock_at_max
+                        1:d.rand1 || 0,
+                        2:d.rand2 || 0,
+                        3:d.rand3 || 0,
+                        4:d.rand4 || 0,
+                        5:d.rand5 || 0,
+                        6:d.rand6 || 0, // 新增rand6支持
+                        max:d.max_at || 3,
+                        lock:d.lock_at_max || 0
                     };
                 }
                 buildCards();
